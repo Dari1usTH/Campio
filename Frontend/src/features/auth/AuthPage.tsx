@@ -1,5 +1,5 @@
 import { authCopy } from "./copy";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Field, TextInput } from "@/components/campio/Field";
 import { PasswordInput, StrengthMeter } from "@/components/campio/PasswordField";
 import { authService } from "@/services/auth";
-import { useT } from "@/i18n";
+import { translateError, useT } from "@/i18n";
 import { AuthFrame, AuthHeading, FormError } from "./AuthFrame";
 
 const schema = z.object({
@@ -27,6 +27,20 @@ export default function AuthPage({ mode }: { mode: "signup" | "login" }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [legal, setLegal] = useState(false);
+  // The Google callback redirects here with ?error=<code> when sign-in fails.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("error");
+    if (!code) return;
+    setError(translateError(code));
+    params.delete("error");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (query ? `?${query}` : ""),
+    );
+  }, []);
   const form = useForm<Values>({
     resolver: zodResolver(
       signup
@@ -39,8 +53,11 @@ export default function AuthPage({ mode }: { mode: "signup" | "login" }) {
   const submit = form.handleSubmit(async (values) => {
     setError(null);
     try {
-      await authService[mode]({ email: values.email, password: values.password });
-      await navigate({ to: "/verify-2fa" });
+      const next = await authService[mode]({
+        email: values.email,
+        password: values.password,
+      });
+      await navigate({ to: next === "signed_in" ? "/app" : "/verify-2fa" });
     } catch (e) {
       setError(e instanceof Error ? e.message : t.empty.error);
     }

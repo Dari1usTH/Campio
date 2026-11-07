@@ -15,6 +15,8 @@ type Config struct {
 	TestUserEmail, TestUserPassword, TestUserOTP              string
 	SMTPHost, SMTPPort, SMTPUser, SMTPPassword, SMTPFrom      string
 	GoogleClientID, GoogleClientSecret                        string
+	// SeedUsers are normal accounts created when SeedTestUser is true.
+	SeedUsers []SeedUser
 
 	Port             string
 	DatabaseURL      string
@@ -53,6 +55,7 @@ func Load() Config {
 		SeedTestUser: envBool("SEED_TEST_USER", false), AllowTestOTP: envBool("ALLOW_TEST_OTP", false), TestUserEmail: env("TEST_USER_EMAIL", "test@campio.app"), TestUserPassword: env("TEST_USER_PASSWORD", ""), TestUserOTP: env("TEST_USER_OTP", "123456"),
 		SMTPHost: env("SMTP_HOST", ""), SMTPPort: env("SMTP_PORT", "587"), SMTPUser: env("SMTP_USER", ""), SMTPPassword: env("SMTP_PASSWORD", ""), SMTPFrom: env("SMTP_FROM", "Campio <noreply@campio.app>"),
 		GoogleClientID: env("GOOGLE_CLIENT_ID", ""), GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
+		SeedUsers:        seedUsers(),
 		Port:             env("PORT", "8080"),
 		DatabaseURL:      env("DATABASE_URL", "postgres://hackathon:hackathon@localhost:5432/hackathon?sslmode=disable"),
 		OpenRouterAPIKey: env("OPENROUTER_API_KEY", ""),
@@ -80,6 +83,19 @@ func Load() Config {
 		SignupCreditUSD:  envFloat("SIGNUP_CREDIT_USD", 3.0),
 		FakePurchases:    envBool("FAKE_PURCHASES", true),
 	}
+}
+
+// SeedUser is a normal (non-test) account the seed creates once.
+type SeedUser struct{ Email, Password string }
+
+func seedUsers() []SeedUser {
+	var out []SeedUser
+	for _, n := range []string{"1", "2"} {
+		if email := env("SEED_USER_"+n+"_EMAIL", ""); email != "" {
+			out = append(out, SeedUser{Email: email, Password: env("SEED_USER_"+n+"_PASSWORD", "")})
+		}
+	}
+	return out
 }
 
 func env(k, def string) string {

@@ -154,6 +154,8 @@ security: []  # hackathon demo: no authentication
 tags:
   - name: Meta
     description: Health, docs, methodology, demo presets, video and image model catalogs.
+  - name: Auth
+    description: Google sign-in. Email/password and 2FA routes are under /api/auth but not yet documented here.
   - name: Market
     description: Raw eMAG and Google Trends data for a keyword.
   - name: Campaigns
@@ -182,6 +184,49 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Health" }
+
+  /api/auth/google:
+    post:
+      tags: [Auth]
+      summary: Start Google sign-in
+      operationId: startGoogleAuth
+      description: "Returns the Google consent URL; the client navigates to it with window.location. Sets a short-lived state cookie. language (en|ro) is used only when the Google login creates a new account."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language: { type: string, enum: [en, ro] }
+      responses:
+        "200":
+          description: Consent URL.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url]
+                properties:
+                  url: { type: string, format: uri }
+        "503":
+          description: "Google login is not configured (oauth_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/auth/google/callback:
+    get:
+      tags: [Auth]
+      summary: Google OAuth redirect target
+      operationId: googleAuthCallback
+      description: "Browser navigation only, never called with fetch. On success it creates the account if needed (verified, with the signup credit) and redirects to /verify-2fa?challenge=<id>, because two-factor stays mandatory. On failure it redirects to /login?error=<code>, where code is oauth_failed, oauth_cancelled, oauth_email_unverified or email_unavailable."
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        "302":
+          description: Redirect to the app (verify-2fa on success, login with ?error on failure).
 
   /api/openapi.yaml:
     get:

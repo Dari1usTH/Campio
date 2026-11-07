@@ -671,6 +671,8 @@
     "google_unavailable": "Google login has not been configured yet. Use email to continue.",
     "oauth_unavailable": "Google login has not been configured yet. Use email to continue.",
     "oauth_failed": "Google login failed. Please try again.",
+    "oauth_cancelled": "Google sign-in was cancelled.",
+    "oauth_email_unverified": "Your Google account has no verified email address.",
     "ai_unavailable": "AI generation is temporarily unavailable. Please try again.",
     "ai_error": "AI generation failed. Please try again.",
     "not_ready": "This campaign is still being prepared.",

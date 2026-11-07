@@ -29,9 +29,13 @@ export function getChallenge():Challenge|null{
  try{const raw=sessionStorage.getItem(CHALLENGE_KEY);const parsed=challengeSchema.safeParse(raw?JSON.parse(raw):null);return parsed.success?parsed.data:null;}catch{return null;}
 }
 export function setChallenge(value:Challenge|null){if(value)sessionStorage.setItem(CHALLENGE_KEY,JSON.stringify(value));else sessionStorage.removeItem(CHALLENGE_KEY);}
-async function credentials(path:string,input:{email:string;password:string}){
- const result=challengeSchema.parse(await http(path,{method:"POST",body:JSON.stringify({...input,language:getLocale()})}));
- setChallenge(result); return result;
+// Returns "signed_in" when the account has no 2FA (password-only), otherwise
+// stores the challenge and returns "challenge" for the /verify-2fa step.
+async function credentials(path:string,input:{email:string;password:string}):Promise<"signed_in"|"challenge">{
+ const data=await http(path,{method:"POST",body:JSON.stringify({...input,language:getLocale()})});
+ const direct=verificationSchema.safeParse(data);
+ if(direct.success){setChallenge(null);setSession(direct.data.session);return "signed_in";}
+ setChallenge(challengeSchema.parse(data)); return "challenge";
 }
 export const authService={
  signup:(input:{email:string;password:string})=>credentials("/auth/signup",input),

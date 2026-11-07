@@ -326,6 +326,15 @@ func (s *Server) login(c *gin.Context) {
 		fail(c, 401, "invalid_credentials", "invalid credentials")
 		return
 	}
+	// Password-only accounts (2FA off, set only by the seed) sign in directly.
+	if !u.TwoFactorEnabled && u.Verified {
+		if err = s.session(c, u); err != nil {
+			failErr(c, err)
+			return
+		}
+		c.JSON(200, gin.H{"session": sessionJSON(u)})
+		return
+	}
 	s.challenge(c, u)
 }
 func (s *Server) getChallenge(c *gin.Context) {
@@ -575,27 +584,53 @@ func (s *Server) enableTOTP(c *gin.Context) {
 	c.Status(204)
 }
 
+const oauthCookie = "campio_oauth_state"
+
+func (s *Server) googleRedirectURI() string {
+	return strings.TrimRight(s.Cfg.APIURL, "/") + "/api/auth/google/callback"
+}
+
+// googleStart returns the Google consent URL. The state cookie carries the
+// CSRF state plus the UI language, so a new account gets the right language.
 func (s *Server) googleStart(c *gin.Context) {
 	if s.Cfg.GoogleClientID == "" || s.Cfg.GoogleClientSecret == "" {
 		fail(c, 503, "oauth_unavailable", "Google login not configured")
 		return
 	}
+	var req struct{ Language string }
+	_ = c.ShouldBindJSON(&req)
 	state := randomToken()
-	http.SetCookie(c.Writer, &http.Cookie{Name: "campio_oauth_state", Value: state, Path: "/api/auth/google", MaxAge: 600, HttpOnly: true, Secure: s.Cfg.AppEnv == "production", SameSite: http.SameSiteLaxMode})
-	q := url.Values{"client_id": {s.Cfg.GoogleClientID}, "redirect_uri": {strings.TrimRight(s.Cfg.APIURL, "/") + "/api/auth/google/callback"}, "response_type": {"code"}, "scope": {"openid email profile"}, "state": {state}}
+	http.SetCookie(c.Writer, &http.Cookie{Name: oauthCookie, Value: state + "." + validLanguage(req.Language), Path: "/api/auth/google", MaxAge: 600, HttpOnly: true, Secure: s.Cfg.AppEnv == "production", SameSite: http.SameSiteLaxMode})
+	q := url.Values{"client_id": {s.Cfg.GoogleClientID}, "redirect_uri": {s.googleRedirectURI()}, "response_type": {"code"}, "scope": {"openid email profile"}, "state": {state}, "prompt": {"select_account"}}
 	c.JSON(200, gin.H{"url": "https://accounts.google.com/o/oauth2/v2/auth?" + q.Encode()})
 }
+
+// googleCallback is reached by a browser navigation, so every failure
+// redirects back to the login page with ?error=<code> instead of JSON.
 func (s *Server) googleCallback(c *gin.Context) {
-	state, err := c.Cookie("campio_oauth_state")
-	if err != nil || state == "" || subtle.ConstantTimeCompare([]byte(state), []byte(c.Query("state"))) != 1 {
-		fail(c, 400, "oauth_failed", "invalid OAuth state")
+	failRedirect := func(code, reason string, err error) {
+		slog.Warn("google login failed", "reason", reason, "err", err)
+		c.Redirect(302, strings.TrimRight(s.Cfg.AppURL, "/")+"/login?error="+url.QueryEscape(code))
+	}
+	cookie, _ := c.Cookie(oauthCookie)
+	http.SetCookie(c.Writer, &http.Cookie{Name: oauthCookie, Value: "", Path: "/api/auth/google", MaxAge: -1, HttpOnly: true, Secure: s.Cfg.AppEnv == "production", SameSite: http.SameSiteLaxMode})
+	state, language, _ := strings.Cut(cookie, ".")
+	if state == "" || subtle.ConstantTimeCompare([]byte(state), []byte(c.Query("state"))) != 1 {
+		failRedirect("oauth_failed", "invalid state", nil)
 		return
 	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: "campio_oauth_state", Value: "", Path: "/api/auth/google", MaxAge: -1, HttpOnly: true, Secure: s.Cfg.AppEnv == "production", SameSite: http.SameSiteLaxMode})
+	if e := c.Query("error"); e != "" || c.Query("code") == "" {
+		failRedirect("oauth_cancelled", "consent not granted: "+e, nil)
+		return
+	}
+	ctx := c.Request.Context()
 	client := &http.Client{Timeout: 20 * time.Second}
-	resp, err := client.PostForm("https://oauth2.googleapis.com/token", url.Values{"code": {c.Query("code")}, "client_id": {s.Cfg.GoogleClientID}, "client_secret": {s.Cfg.GoogleClientSecret}, "redirect_uri": {strings.TrimRight(s.Cfg.APIURL, "/") + "/api/auth/google/callback"}, "grant_type": {"authorization_code"}})
+	form := url.Values{"code": {c.Query("code")}, "client_id": {s.Cfg.GoogleClientID}, "client_secret": {s.Cfg.GoogleClientSecret}, "redirect_uri": {s.googleRedirectURI()}, "grant_type": {"authorization_code"}}
+	tokenReq, _ := http.NewRequestWithContext(ctx, "POST", "https://oauth2.googleapis.com/token", strings.NewReader(form.Encode()))
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(tokenReq)
 	if err != nil {
-		fail(c, 502, "oauth_failed", "token exchange failed")
+		failRedirect("oauth_failed", "token exchange", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -603,14 +638,14 @@ func (s *Server) googleCallback(c *gin.Context) {
 		AccessToken string `json:"access_token"`
 	}
 	if json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&token) != nil || resp.StatusCode != 200 || token.AccessToken == "" {
-		fail(c, 401, "oauth_failed", "Google token rejected")
+		failRedirect("oauth_failed", fmt.Sprintf("token rejected (HTTP %d)", resp.StatusCode), nil)
 		return
 	}
-	req, _ := http.NewRequestWithContext(c.Request.Context(), "GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
+	req, _ := http.NewRequestWithContext(ctx, "GET", "https://openidconnect.googleapis.com/v1/userinfo", nil)
 	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 	info, err := client.Do(req)
 	if err != nil {
-		fail(c, 502, "oauth_failed", "profile unavailable")
+		failRedirect("oauth_failed", "userinfo", err)
 		return
 	}
 	defer info.Body.Close()
@@ -619,30 +654,57 @@ func (s *Server) googleCallback(c *gin.Context) {
 		EmailVerified bool `json:"email_verified"`
 		Name          string
 	}
-	if json.NewDecoder(io.LimitReader(info.Body, 1<<20)).Decode(&profile) != nil || !profile.EmailVerified || profile.Email == "" {
-		fail(c, 401, "oauth_failed", "verified Google email required")
+	if json.NewDecoder(io.LimitReader(info.Body, 1<<20)).Decode(&profile) != nil || info.StatusCode != 200 || !profile.EmailVerified || profile.Email == "" {
+		failRedirect("oauth_email_unverified", "no verified email", nil)
 		return
 	}
-	u, err := s.userByEmail(c.Request.Context(), profile.Email)
+	email := strings.ToLower(strings.TrimSpace(profile.Email))
+	name := strings.TrimSpace(profile.Name)
+	if name == "" {
+		name = strings.Split(email, "@")[0]
+	}
+	// Google has verified the address, so the account is created verified.
+	// The insert is race-safe: a concurrent signup for the same email wins.
+	tag, err := s.Store.Pool.Exec(ctx, "INSERT INTO users(id,email,name,language,verified) VALUES($1,$2,$3,$4,true) ON CONFLICT(email) DO NOTHING", uuid.New(), email, name, validLanguage(language))
 	if err != nil {
-		u = user{ID: uuid.New(), Email: strings.ToLower(profile.Email), Name: profile.Name, Language: "en", Verified: true, TwoFactorEnabled: true, Method: "email"}
-		_, err = s.Store.Pool.Exec(c.Request.Context(), "INSERT INTO users(id,email,name,verified) VALUES($1,$2,$3,true)", u.ID, u.Email, u.Name)
-		if err != nil {
-			failErr(c, err)
+		failRedirect("oauth_failed", "create user", err)
+		return
+	}
+	u, err := s.userByEmail(ctx, email)
+	if err != nil {
+		failRedirect("oauth_failed", "load user", err)
+		return
+	}
+	if tag.RowsAffected() == 1 {
+		s.grantSignupCredit(ctx, u.ID)
+	}
+	// Password-only accounts skip the second factor here too.
+	if !u.TwoFactorEnabled && u.Verified {
+		if err = s.session(c, u); err != nil {
+			failRedirect("oauth_failed", "session", err)
 			return
 		}
-		s.grantSignupCredit(c.Request.Context(), u.ID)
-	}
-	id := uuid.New()
-	code := otpCode()
-	_, err = s.Store.Pool.Exec(c.Request.Context(), "INSERT INTO auth_challenges(id,user_id,code_hash,method,expires_at) VALUES($1,$2,$3,$4,$5)", id, u.ID, hashToken(code), u.Method, time.Now().Add(10*time.Minute))
-	if err != nil {
-		failErr(c, err)
+		c.Redirect(302, strings.TrimRight(s.Cfg.AppURL, "/")+"/app")
 		return
 	}
-	if u.Method == "email" {
-		if err = s.sendMail(c.Request.Context(), u, "verification", code); err != nil {
-			fail(c, 503, "email_unavailable", "delivery failed")
+	// Otherwise Google proves the email and the challenge proves the
+	// second factor (email code or authenticator app).
+	id := uuid.New()
+	code := otpCode()
+	if s.fixedOTP(u) {
+		code = s.Cfg.TestUserOTP
+	}
+	method := u.Method
+	if method == "" {
+		method = "email"
+	}
+	if _, err = s.Store.Pool.Exec(ctx, "INSERT INTO auth_challenges(id,user_id,code_hash,method,expires_at) VALUES($1,$2,$3,$4,$5)", id, u.ID, hashToken(code), method, time.Now().Add(10*time.Minute)); err != nil {
+		failRedirect("oauth_failed", "challenge", err)
+		return
+	}
+	if method == "email" {
+		if err = s.sendMail(ctx, u, "verification", code); err != nil {
+			failRedirect("email_unavailable", "send code", err)
 			return
 		}
 	}

@@ -48,7 +48,7 @@ openssl rand -hex 24
 # CORS_ORIGINS=https://campaigns.example.com
 # DOMAIN=campaigns.example.com
 # ACME_EMAIL=you@example.com
-# SEED_TEST_USER=false
+# SEED_TEST_USER=false   (true also creates SEED_USER_1_* / SEED_USER_2_*)
 # ALLOW_TEST_OTP=false
 # MOCK_AI=false
 # SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM
@@ -72,7 +72,9 @@ This starts the existing resource-limited worker on its isolated network. Native
 
 ## Demo account and OTP guard
 
-`SEED_TEST_USER=true` creates the configured verified test user only once, adds demo campaigns/results/notifications/onboarding, and enables its 2FA flow. If `TEST_USER_PASSWORD` is empty, a strong password is printed only upon creation. Subsequent seeds preserve it.
+`SEED_TEST_USER=true` creates the configured verified test user. If `TEST_USER_PASSWORD` is empty, a strong password is printed only upon creation, and later restarts keep it; an explicit `TEST_USER_PASSWORD` is re-applied on every start.
+
+The same flag also creates up to two normal accounts from `SEED_USER_1_EMAIL`/`SEED_USER_1_PASSWORD` and `SEED_USER_2_EMAIL`/`SEED_USER_2_PASSWORD`, in every `APP_ENV` including production. They are verified, receive the signup credit, are charged for AI use, and are **password-only**: login (and Google sign-in) opens a session directly, with no 2FA code. Accounts created through signup always keep 2FA. The password is set only when the account is created, so a password changed in the app survives restarts, and changing the env password later has no effect; each start does re-apply "verified, no 2FA" to these two emails. A seed user with an invalid email or a password outside 12-72 characters stops the server at startup.
 
 The fixed `TEST_USER_OTP` (default `123456`) applies **only to the explicitly seeded test account**, and only if `APP_ENV` is not `production` **or** `ALLOW_TEST_OTP=true`. With `APP_ENV=production` and `ALLOW_TEST_OTP=false`, that bypass does not exist; use actual emailed codes/TOTP. Do not enable the override on a public service.
 

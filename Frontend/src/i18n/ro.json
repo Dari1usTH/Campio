@@ -671,6 +671,8 @@
     "google_unavailable": "Autentificarea Google nu este configurată încă. Continuă cu emailul.",
     "oauth_unavailable": "Autentificarea Google nu este configurată încă. Continuă cu emailul.",
     "oauth_failed": "Autentificarea Google a eșuat. Încearcă din nou.",
+    "oauth_cancelled": "Autentificarea Google a fost anulată.",
+    "oauth_email_unverified": "Contul tău Google nu are o adresă de email verificată.",
     "ai_unavailable": "Generarea AI nu este disponibilă momentan. Încearcă din nou.",
     "ai_error": "Generarea AI a eșuat. Încearcă din nou.",
     "not_ready": "Această campanie este încă în pregătire.",
