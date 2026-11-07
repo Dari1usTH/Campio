@@ -172,11 +172,14 @@ func (s *Service) run(k Kit) {
 			snap    model.MarketSnapshot
 			snapErr error
 			ts      model.TrendSeries
+			web     model.WebSnapshot
 			wg      sync.WaitGroup
 		)
-		wg.Add(2)
+		webQuery := firstNonEmpty(k.Input.KeywordEN, k.Input.Keyword)
+		wg.Add(3)
 		go func() { defer wg.Done(); snap, snapErr = s.Market.Snapshot(ctx, k.Input.Keyword) }()
 		go func() { defer wg.Done(); ts = s.Market.Trend(ctx, k.Input.Keyword) }()
+		go func() { defer wg.Done(); web = s.Market.Web(ctx, webQuery, k.Input.Subreddits) }()
 		wg.Wait()
 		if snapErr != nil {
 			if errors.Is(snapErr, market.ErrNoData) && !lastRound {
@@ -192,9 +195,11 @@ func (s *Service) run(k Kit) {
 			fail(StepMarket, snapErr)
 			return
 		}
-		pages += snap.PagesFetched
+		pages += snap.PagesFetched + web.PagesFetched
 		_ = s.Store.SetCampaignData(ctx, k.ID, snap, ts)
+		_ = s.Store.SetCampaignWeb(ctx, k.ID, web)
 		ms = analysis.ComputeMarket(snap)
+		k.Web = buildWebBlock(web, ms.PriceMedian)
 		k.Market = &MarketBlock{
 			SourceInfo:      SourceInfo{Source: snap.Source, FetchedAt: snap.FetchedAt, FallbackNote: snap.FallbackNote},
 			Stats:           ms,
@@ -235,7 +240,12 @@ func (s *Service) run(k Kit) {
 
 	// 2. strategy
 	t0 = begin(StepStrategy)
-	strat, u, err := s.AI.GenerateStrategy(ctx, k.Input.brief(), ms, k.Trend.Stats, snap)
+	var webSnap model.WebSnapshot
+	var webStats analysis.WebStats
+	if row.Web != nil && k.Web != nil {
+		webSnap, webStats = *row.Web, k.Web.Stats
+	}
+	strat, u, err := s.AI.GenerateStrategy(ctx, k.Input.brief(), ms, k.Trend.Stats, snap, webSnap, webStats)
 	usage.Add(u)
 	if err != nil {
 		fail(StepStrategy, err)
@@ -305,4 +315,26 @@ func topProducts(ps []model.Product, n int) []model.Product {
 		cp = []model.Product{}
 	}
 	return cp
+}
+
+func buildWebBlock(w model.WebSnapshot, emagMedianRON float64) *WebBlock {
+	b := &WebBlock{
+		Source: w.Source, FetchedAt: w.FetchedAt, Query: w.Query, Subreddits: w.Subreddits, Sources: w.Sources,
+		Stats:       analysis.ComputeWeb(w, emagMedianRON),
+		Amazon:      append([]model.WebProduct{}, w.Amazon...),
+		Discussions: append([]model.Discussion{}, w.Discussions...),
+		Launches:    analysis.RelevantLaunches(w.Launches, w.Query),
+	}
+	if b.Subreddits == nil {
+		b.Subreddits = []string{}
+	}
+	if b.Sources == nil {
+		b.Sources = []model.WebSourceStatus{}
+	}
+	sort.SliceStable(b.Amazon, func(i, j int) bool { return b.Amazon[i].ReviewCount > b.Amazon[j].ReviewCount })
+	sort.SliceStable(b.Discussions, func(i, j int) bool { return b.Discussions[i].Score > b.Discussions[j].Score })
+	b.Amazon = b.Amazon[:min(10, len(b.Amazon))]
+	b.Discussions = b.Discussions[:min(10, len(b.Discussions))]
+	b.Launches = b.Launches[:min(10, len(b.Launches))]
+	return b
 }

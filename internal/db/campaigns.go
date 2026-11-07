@@ -27,6 +27,7 @@ type CampaignRow struct {
 	Kit          json.RawMessage
 	Market       *model.MarketSnapshot
 	Trends       *model.TrendSeries
+	Web          *model.WebSnapshot
 	AICostUSD    float64
 	PagesFetched int
 }
@@ -67,6 +68,13 @@ func (s *Store) SetCampaignData(ctx context.Context, id uuid.UUID, snap model.Ma
 	return err
 }
 
+// SetCampaignWeb stores the raw web data (Amazon, Reddit, BetaList) used by the campaign.
+func (s *Store) SetCampaignWeb(ctx context.Context, id uuid.UUID, w model.WebSnapshot) error {
+	b, _ := json.Marshal(w)
+	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET web=$2, updated_at=now() WHERE id=$1`, id, b)
+	return err
+}
+
 // SetCampaignProduct stores the product name understood by the intake step.
 func (s *Store) SetCampaignProduct(ctx context.Context, id uuid.UUID, productName string) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET product_name=$2, updated_at=now() WHERE id=$1`, id, productName)
@@ -93,9 +101,9 @@ func (s *Store) AddCampaignAICost(ctx context.Context, id uuid.UUID, cost float6
 func (s *Store) GetCampaign(ctx context.Context, id uuid.UUID) (CampaignRow, error) {
 	var r CampaignRow
 	var errMsg *string
-	var mb, tb []byte
-	err := s.Pool.QueryRow(ctx, `SELECT id, created_at, updated_at, status, step, error, product_name, keyword, kit, market, trends, ai_cost_usd, pages_fetched FROM campaigns WHERE id=$1`, id).
-		Scan(&r.ID, &r.CreatedAt, &r.UpdatedAt, &r.Status, &r.Step, &errMsg, &r.ProductName, &r.Keyword, &r.Kit, &mb, &tb, &r.AICostUSD, &r.PagesFetched)
+	var mb, tb, wb []byte
+	err := s.Pool.QueryRow(ctx, `SELECT id, created_at, updated_at, status, step, error, product_name, keyword, kit, market, trends, web, ai_cost_usd, pages_fetched FROM campaigns WHERE id=$1`, id).
+		Scan(&r.ID, &r.CreatedAt, &r.UpdatedAt, &r.Status, &r.Step, &errMsg, &r.ProductName, &r.Keyword, &r.Kit, &mb, &tb, &wb, &r.AICostUSD, &r.PagesFetched)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return r, ErrNotFound
 	}
@@ -114,6 +122,12 @@ func (s *Store) GetCampaign(ctx context.Context, id uuid.UUID) (CampaignRow, err
 	if len(tb) > 0 {
 		r.Trends = &model.TrendSeries{}
 		if err := json.Unmarshal(tb, r.Trends); err != nil {
+			return r, err
+		}
+	}
+	if len(wb) > 0 {
+		r.Web = &model.WebSnapshot{}
+		if err := json.Unmarshal(wb, r.Web); err != nil {
 			return r, err
 		}
 	}

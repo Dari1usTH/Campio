@@ -40,6 +40,8 @@ type Input struct {
 	ImageAssetIDs      []uuid.UUID `json:"image_asset_ids"`
 	ProductName        string      `json:"product_name"`
 	Keyword            string      `json:"keyword"`
+	KeywordEN          string      `json:"keyword_en"` // English term for Amazon / Reddit / BetaList
+	Subreddits         []string    `json:"subreddits"`
 	ProductDescription string      `json:"product_description,omitempty"`
 	SalePrice          float64     `json:"sale_price"`
 	AdBudgetRON        float64     `json:"ad_budget_ron"`
@@ -124,6 +126,19 @@ type TrendBlock struct {
 	Monthly []MonthPoint        `json:"monthly"`
 }
 
+// WebBlock is the "outside eMAG" section: Amazon, Reddit and BetaList.
+type WebBlock struct {
+	Source      string                  `json:"source"` // live | cache
+	FetchedAt   time.Time               `json:"fetched_at"`
+	Query       string                  `json:"query"`
+	Subreddits  []string                `json:"subreddits"`
+	Sources     []model.WebSourceStatus `json:"sources"`
+	Stats       analysis.WebStats       `json:"stats"`
+	Amazon      []model.WebProduct      `json:"amazon"`      // top 10 by reviews
+	Discussions []model.Discussion      `json:"discussions"` // top 10 by score
+	Launches    []model.Launch          `json:"launches"`    // relevant to the query, max 10
+}
+
 // ChannelPlan merges the AI rationale with the code-computed numbers.
 type ChannelPlan struct {
 	analysis.ChannelPlan
@@ -159,6 +174,7 @@ type Kit struct {
 	Intake    IntakeBlock          `json:"intake"`
 	Market    *MarketBlock         `json:"market"`
 	Trend     *TrendBlock          `json:"trend"`
+	Web       *WebBlock            `json:"web"`
 	Strategy  *ai.Strategy         `json:"strategy"`
 	Content   *ai.Content          `json:"content"`
 	Plan      *PlanBlock           `json:"plan"`

@@ -38,6 +38,8 @@ type IntakeQA struct {
 type IntakeResult struct {
 	ProductName        string           `json:"product_name"`
 	Keyword            string           `json:"keyword"`
+	KeywordEN          string           `json:"keyword_en"`
+	Subreddits         []string         `json:"subreddits"`
 	ProductDescription string           `json:"product_description"`
 	BrandName          string           `json:"brand_name"`
 	SalePrice          float64          `json:"sale_price"`
@@ -48,6 +50,8 @@ type IntakeResult struct {
 const intakeSystem = `Ești asistentul de lansare pentru vânzători mici de pe eMAG.ro. Vânzătorul îți scrie liber ce vrea să vândă și poate atașa poze cu produsul. Din mesaj, poze și răspunsurile anterioare, completezi fișa produsului:
 - "product_name": numele scurt și clar al produsului, în română (ex. "Suport laptop reglabil din aluminiu"). "" dacă nu se înțelege ce produs este.
 - "keyword": termenul de căutare pe eMAG, 2-3 cuvinte, fără diacritice, așa cum ar căuta un client (ex. "suport laptop"). Dacă produsul se potrivește cu unul din "known_keywords", folosește exact acel termen.
+- "keyword_en": același termen în engleză, 1-3 cuvinte, cum ar căuta un client pe Amazon sau Reddit (ex. "laptop stand"). "" dacă nu se înțelege produsul.
+- "subreddits": 2-3 subreddituri în engleză, de nișă, unde oamenii discută sau recomandă acest tip de produs (ex. pentru suport laptop: "ergonomics", "laptops"). Doar numele, fără "r/". Evită subredditurile uriașe și generale (AskReddit, Romania, BuyItForLife, technology), căutarea în ele nu funcționează. [] dacă nu se înțelege produsul.
 - "product_description": specificațiile și beneficiile spuse de vânzător plus ce se vede clar în poze (material, culoare, formă, accesorii). NU inventa specificații care nu apar în text sau în poze.
 - "brand_name": doar dacă e spus sau se vede clar pe produs; altfel "".
 - "sale_price": prețul de vânzare în lei cu TVA, DOAR dacă vânzătorul l-a spus; altfel 0. Nu estima niciodată.
@@ -57,7 +61,8 @@ Răspunsurile vânzătorului la întrebări au prioritate față de mesajul ini�
 
 func intakeSchema() map[string]any {
 	return sObj(map[string]any{
-		"product_name": sStr(), "keyword": sStr(), "product_description": sStr(), "brand_name": sStr(),
+		"product_name": sStr(), "keyword": sStr(), "keyword_en": sStr(), "subreddits": sArr(sStr()),
+		"product_description": sStr(), "brand_name": sStr(),
 		"sale_price": sNum(), "ad_budget_ron": sNum(),
 		"questions": sArr(sObj(map[string]any{"field": sEnum(IntakeFields...), "text": sStr()})),
 	})
@@ -90,6 +95,10 @@ func (c *Client) Intake(ctx context.Context, prompt string, images []string, his
 	}
 	r.ProductName = strings.TrimSpace(r.ProductName)
 	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.KeywordEN = strings.TrimSpace(r.KeywordEN)
+	if r.Subreddits == nil {
+		r.Subreddits = []string{}
+	}
 	r.ProductDescription = strings.TrimSpace(r.ProductDescription)
 	r.BrandName = strings.TrimSpace(r.BrandName)
 	if r.SalePrice < 0 {

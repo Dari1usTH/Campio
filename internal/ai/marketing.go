@@ -17,6 +17,7 @@ type Complaint struct {
 	Severity    string   `json:"severity"` // low | medium | high
 	Quotes      []string `json:"quotes"`
 	Opportunity string   `json:"opportunity"`
+	Source      string   `json:"source"` // emag_reviews | reddit | both
 }
 
 // Persona is a target buyer.
@@ -60,11 +61,12 @@ type Strategy struct {
 
 var onlineChannels = []string{"facebook", "instagram", "tiktok", "youtube", "google_search", "emag", "forums", "pinterest"}
 
-const strategySystem = `Ești strateg de marketing pentru vânzători mici de pe eMAG.ro. Primești produsul vânzătorului și date reale despre piață: concurenți, prețuri, recenzii ale clienților și tendința Google Trends.
+const strategySystem = `Ești strateg de marketing pentru vânzători mici de pe eMAG.ro. Primești produsul vânzătorului și date reale despre piață: concurenți eMAG, prețuri, recenzii ale clienților, tendința Google Trends și, când sunt disponibile, date din afara eMAG: produse similare de pe Amazon ("amazon_competitors"), discuții de pe Reddit ("reddit_discussions") și produse noi lansate pe BetaList ("new_launches"). Statisticile lor calculate sunt în "web_stats".
 Sarcini:
-1. Extrage nemulțumirile recurente DOAR din recenziile primite (citatele trebuie să fie fragmente reale; "mentions" = câte recenzii din listă o menționează). Max 6.
-2. Definește 2-3 persona (id "p1", "p2", "p3"): cine cumpără, ce îi motivează, unde stă online (din lista de canale permise), ce îi declanșează cumpărarea, ce obiecții are, și un "message_hook" de o frază.
+1. Extrage nemulțumirile recurente DOAR din recenziile eMAG primite și din discuțiile Reddit primite (citatele trebuie să fie fragmente reale, în limba originală; "mentions" = câte recenzii/discuții din liste o menționează). "source" = "emag_reviews", "reddit" sau "both", după unde apare. Max 6.
+2. Definește 2-3 persona (id "p1", "p2", "p3"): cine cumpără, ce îi motivează, unde stă online (din lista de canale permise), ce îi declanșează cumpărarea, ce obiecții are, și un "message_hook" de o frază. Discuțiile Reddit arată cum vorbesc și ce caută cumpărătorii reali: folosește-le pentru motivații, obiecții și declanșatori.
 3. Poziționare: transformă nemulțumirile în mesaje. Ex.: dacă toți se plâng de baterie → "baterie testată 8 ore". "proof_claim" trebuie să fie o promisiune verificabilă, dar NU inventa specificații tehnice pe care vânzătorul nu le-a dat: formulează-le ca sugestie de verificat (ex.: "dacă bateria ține 8 ore, spune exact asta").
+Amazon arată cum se poziționează produsul pe piața internațională (titluri, prețuri, ratinguri); BetaList arată idei noi din jurul produsului. Folosește-le doar ca inspirație pentru diferențiere, nu ca date despre piața din România.
 Scrie în română, concis. Nu inventa cifre de piață: folosește doar cifrele din JSON.`
 
 func strategySchema() map[string]any {
@@ -72,7 +74,7 @@ func strategySchema() map[string]any {
 		"summary": sStr(),
 		"complaints": sArr(sObj(map[string]any{
 			"theme": sStr(), "mentions": sInt(), "severity": sEnum("low", "medium", "high"),
-			"quotes": sArr(sStr()), "opportunity": sStr(),
+			"quotes": sArr(sStr()), "opportunity": sStr(), "source": sEnum("emag_reviews", "reddit", "both"),
 		})),
 		"personas": sArr(sObj(map[string]any{
 			"id": sStr(), "name": sStr(), "age_range": sStr(), "occupation": sStr(), "description": sStr(),
@@ -98,11 +100,18 @@ type ProductBrief struct {
 }
 
 // GenerateStrategy runs step 1.
-func (c *Client) GenerateStrategy(ctx context.Context, p ProductBrief, m analysis.MarketStats, t analysis.TrendStats, snap model.MarketSnapshot) (Strategy, Usage, error) {
+// web may be empty (older campaigns, or every web source skipped).
+func (c *Client) GenerateStrategy(ctx context.Context, p ProductBrief, m analysis.MarketStats, t analysis.TrendStats, snap model.MarketSnapshot, web model.WebSnapshot, ws analysis.WebStats) (Strategy, Usage, error) {
 	payload := map[string]any{
 		"product": p, "market": m, "trend": t,
 		"competitors": topCompetitors(snap.Products, 15),
 		"reviews":     selectReviews(snap, 70),
+	}
+	if len(web.Amazon)+len(web.Discussions)+len(web.Launches) > 0 {
+		payload["web_stats"] = ws
+		payload["amazon_competitors"] = topAmazon(web.Amazon, 10)
+		payload["reddit_discussions"] = selectDiscussions(web.Discussions, 40)
+		payload["new_launches"] = relevantLaunches(web.Launches, web.Query, 10)
 	}
 	var s Strategy
 	u, err := c.structured(ctx, "strategy", strategySystem, "Date (JSON):\n"+mustJSON(payload), strategySchema(), 5000, &s)
@@ -111,6 +120,11 @@ func (c *Client) GenerateStrategy(ctx context.Context, p ProductBrief, m analysi
 	}
 	if s.Complaints == nil {
 		s.Complaints = []Complaint{}
+	}
+	for i := range s.Complaints {
+		if s.Complaints[i].Source == "" {
+			s.Complaints[i].Source = "emag_reviews"
+		}
 	}
 	if s.Personas == nil {
 		s.Personas = []Persona{}
@@ -378,6 +392,41 @@ func selectReviews(snap model.MarketSnapshot, n int) []map[string]any {
 	out := make([]map[string]any, 0, len(rs))
 	for _, r := range rs {
 		out = append(out, map[string]any{"rating": r.Rating, "text": truncate(r.Text, 400)})
+	}
+	return out
+}
+
+func topAmazon(ps []model.WebProduct, n int) []map[string]any {
+	cp := append([]model.WebProduct(nil), ps...)
+	sort.SliceStable(cp, func(i, j int) bool { return cp[i].ReviewCount > cp[j].ReviewCount })
+	out := []map[string]any{}
+	for _, p := range cp[:min(n, len(cp))] {
+		out = append(out, map[string]any{"title": truncate(p.Title, 120), "price": p.Price, "currency": p.Currency,
+			"rating": p.Rating, "reviews": p.ReviewCount, "sponsored": p.Sponsored})
+	}
+	return out
+}
+
+// selectDiscussions keeps the highest-scored Reddit posts and comments.
+func selectDiscussions(ds []model.Discussion, n int) []map[string]any {
+	cp := append([]model.Discussion(nil), ds...)
+	sort.SliceStable(cp, func(i, j int) bool { return cp[i].Score > cp[j].Score })
+	out := []map[string]any{}
+	for _, d := range cp[:min(n, len(cp))] {
+		m := map[string]any{"kind": d.Kind, "subreddit": d.Subreddit, "score": d.Score, "text": truncate(d.Text, 400)}
+		if d.Title != "" {
+			m["title"] = truncate(d.Title, 200)
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+func relevantLaunches(ls []model.Launch, query string, n int) []map[string]any {
+	rel := analysis.RelevantLaunches(ls, query)
+	out := []map[string]any{}
+	for _, l := range rel[:min(n, len(rel))] {
+		out = append(out, map[string]any{"name": l.Name, "tagline": l.Tagline})
 	}
 	return out
 }

@@ -62,6 +62,10 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       SCRAPER_ENABLED: ${SCRAPER_ENABLED:-true}
       TRENDS_ENABLED: ${TRENDS_ENABLED:-true}
+      AMAZON_ENABLED: ${AMAZON_ENABLED:-true}
+      AMAZON_DOMAIN: ${AMAZON_DOMAIN:-www.amazon.de}
+      REDDIT_ENABLED: ${REDDIT_ENABLED:-true}
+      BETALIST_ENABLED: ${BETALIST_ENABLED:-true}
       CACHE_TTL: ${CACHE_TTL:-24h}
     volumes:
       - media:/data/media
