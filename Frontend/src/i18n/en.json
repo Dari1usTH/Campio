@@ -2,65 +2,15 @@
   "workspace": {
     "demoMode": "Demo campaign",
     "demoNote": "Your changes are saved securely to your account.",
-    "welcome": "Welcome back to your workshop of ideas.",
-    "today": "A small step today. A stronger brand tomorrow.",
-    "overview": "Overview",
-    "active": "Campaigns ready",
-    "completed": "Actions completed",
-    "investment": "Planned budget",
-    "launchpad": "A good idea deserves",
-    "launchpadAccent": "a campaign to match.",
-    "heroDescription": "You bring the product. We bring together the right audience, message and a plan ready to put into action.",
     "newCampaign": "Let's create something good",
-    "step": "NEXT STEP",
-    "weeklyAction": "A little today. Further tomorrow.",
-    "done": "Action completed. Another step forward!",
     "allDone": "You've completed every action. Time to see the results.",
-    "days": "days",
     "open": "Open campaign",
     "delete": "Delete",
     "deleted": "Campaign deleted.",
     "deleteCampaign": "Delete this campaign?",
     "deleteCampaignBody": "The campaign and its results will be permanently deleted from your account. This cannot be undone.",
-    "week": "Your week",
-    "weeklyDays": [
-      "M",
-      "T",
-      "W",
-      "T",
-      "F",
-      "S",
-      "S"
-    ],
-    "activity": "Actions completed this week",
-    "noActivity": "Your first checkmark starts with you.",
-    "getStarted": "A good start",
-    "onboardSub": "Seven small steps towards your first campaign.",
-    "usageDescription": "Campaigns created this month",
-    "demoCredits": "Demo allowance · 10 campaigns",
-    "tipsTitle": "A little inspiration",
-    "nextTip": "Next tip",
-    "previousTip": "Previous tip",
-    "resultsLabel": "LET'S SEE WHAT WORKED",
     "resultsTitle": "You've posted. How did it go?",
-    "resultsDescription": "Add your campaign numbers and discover the next step.",
-    "findCampaign": "Find your next good idea.",
     "clearSearch": "Reset filters",
-    "compareSelected": "campaigns selected",
-    "selectTwo": "Select exactly two campaigns to compare.",
-    "templates": "Good settings are worth keeping.",
-    "templatesSub": "Start from an existing campaign. The product, budget and tone are filled in for you.",
-    "useTemplate": "Reuse a campaign",
-    "campaignCount": "campaigns",
-    "allVisuals": "All visuals",
-    "images": "Images",
-    "posters": "Posters",
-    "videos": "Videos",
-    "download": "Download PNG",
-    "viewCampaign": "View campaign",
-    "assetsNote": "One place for everything that makes your brand stand out.",
-    "assetsSoon": "More room for creativity.",
-    "assetsSoonBody": "Poster packs and 15-second videos will appear here when available.",
     "notificationsDescription": "The little things that keep your campaigns moving.",
     "notificationError": "We couldn't load your notifications.",
     "theme": "Change theme",
@@ -75,21 +25,17 @@
     "aboutBody": "Campio helps small businesses turn a good product into a clear marketing plan, with audience insights, ready-to-post copy and a practical budget.",
     "heroLabel": "LESS CHAOS. MORE INSPIRATION.",
     "livePreview": "One idea. A whole campaign.",
-    "previewTag": "EXAMPLE CAMPAIGN",
     "previewProduct": "River & Pine candle",
     "previewMessage": "Make room for a little calm.",
     "previewNote": "Soy wax. Carefully poured. RON 89.",
-    "previewReady": "Your campaign is ready",
-    "previewReadySub": "9 deliverables. One place.",
-    "tested": "Message tested with a simulated panel",
+    "previewReady": "Your kit is ready",
+    "previewReadySub": "Market, audience, copy, plan and videos.",
+    "tested": "Your price vs eMAG median",
     "aiPartner": "Your little creative advantage",
     "trustworthy": "Built for small shops. With big ideas.",
-    "platforms": "Fits wherever you sell",
+    "platforms": "Built on real data from",
     "howEyebrow": "FROM “WHAT SHOULD I POST?” TO “DONE, I'VE POSTED.”",
     "bentoEyebrow": "ONE CAMPAIGN. EVERY PIECE.",
-    "allIncluded": "Ready to put to work.",
-    "panelLabel": "SIMULATED PERSONA",
-    "panelQuote": "I like knowing exactly what I'm getting and how much it costs. I'd save this post.",
     "costEstimate": "Illustrative technical estimate, not a final subscription price.",
     "agencyLabel": "Illustrative subscription example",
     "faqSub": "Questions are natural. We have answers.",
@@ -154,102 +100,102 @@
     "heroA": "Marketing,",
     "heroB": "reinvented",
     "heroC": "with AI.",
-    "heroSub": "Describe your product as you would to a friend. Campio gives you the audience, tested message, copy and visual, ready to post today.",
+    "heroSub": "Describe your product in one message and add a photo. Campio reads the eMAG market, finds your audience, writes your listing and ads, plans four weeks of budget and makes short videos.",
     "heroCta": "Create a marketing campaign",
     "heroSecondary": "See an example",
-    "heroNote": "No card needed. Your first campaign in under 2 minutes.",
-    "howTitle": "Three steps. Two minutes.",
+    "heroNote": "Market numbers come from real eMAG data and are computed by code, not guessed by AI.",
+    "howTitle": "One message. One launch kit.",
     "how": [
       {
-        "t": "Tell us about your product",
-        "d": "Write freely, like a message. AI extracts the price, audience and strengths."
+        "t": "Describe your product",
+        "d": "Write freely and add photos. The AI asks only for what is missing, like price or ad budget."
       },
       {
-        "t": "Choose where you sell",
-        "d": "eMAG, Etsy, Trendyol, Instagram and more. You choose the budget and goal."
+        "t": "We read the market",
+        "d": "~60 eMAG competitors with prices and reviews, Google Trends, plus Amazon.de, Reddit and BetaList."
       },
       {
-        "t": "Get your campaign",
-        "d": "Messages tested with a simulated panel, ready-to-post copy, a budget plan and a visual."
+        "t": "Get your kit",
+        "d": "Personas, positioning, listing, ads, a 4-week plan with A/B tests and AI-made videos."
       }
     ],
-    "bentoTitle": "9 deliverables in one campaign.",
-    "bentoSub": "What an agency would do in the first week, ready before you finish your coffee.",
+    "bentoTitle": "Everything to launch on eMAG, in one kit.",
+    "bentoSub": "What an agency would do in the first weeks, ready in about a minute, with every number traceable to data.",
     "bento": [
       {
-        "t": "Who to sell to",
-        "d": "2 clear segments, with ages, platforms and motivations."
+        "t": "Market insight",
+        "d": "Price distribution, median vs your price, ratings, top sellers and a 5-year Google Trends curve."
+      },
+      {
+        "t": "Outside eMAG",
+        "d": "Amazon.de prices, Reddit discussions and new products on BetaList, when available."
+      },
+      {
+        "t": "Who buys",
+        "d": "2–3 personas with motivations, objections and where they spend time online."
       },
       {
         "t": "What to say",
-        "d": "Positioning and a key message in your tone."
+        "d": "Competitors' complaints turned into messages you can prove."
       },
       {
-        "t": "Which message works",
-        "d": "3 tested messages, with the winner highlighted."
+        "t": "Listing and ads",
+        "d": "eMAG titles, description, bullets, keywords, ads per channel and social posts."
       },
       {
-        "t": "Warnings",
-        "d": "Spot potential problems before you post."
+        "t": "Where to spend",
+        "d": "Budget per channel with estimated impressions, clicks, orders and ROAS."
       },
       {
-        "t": "An agent that rewrites",
-        "d": "Improves your message until the score levels off."
+        "t": "A/B tests",
+        "d": "Message A vs B with the sample size, cost and days each test needs."
       },
       {
-        "t": "Where and how much to spend",
-        "d": "Your budget split across channels."
+        "t": "Short videos",
+        "d": "Clips from a video model, edited into a vertical reel by an AI editor."
       },
       {
-        "t": "Ready-to-post copy",
-        "d": "Instagram, TikTok, Meta, email."
-      },
-      {
-        "t": "The visual",
-        "d": "A 1080×1080 image with the winning message."
-      },
-      {
-        "t": "KPIs and cost",
-        "d": "30-day targets and transparent cost."
+        "t": "Cost and chat",
+        "d": "The real cost of the kit, and a chat that rewrites copy and simulates budgets."
       }
     ],
-    "panelEyebrow": "Confidence",
-    "panelTitle": "Tested with a simulated panel before you pay for ads.",
-    "panelBody": "Simulated people from your audience read each message. See who might click, stop scrolling and raise objections before you spend a single leu.",
+    "panelEyebrow": "Trust",
+    "panelTitle": "Code computes the numbers. AI writes the words.",
+    "panelBody": "Market stats, the budget split, impressions, clicks, orders, ROAS and A/B sample sizes are computed from data and fixed channel benchmarks. The AI picks the strategy and writes copy, and is not allowed to invent figures.",
     "panelPoints": [
-      "Transparent score: clicks 50%, stopping 30%, sharing 20%",
-      "Simulated objections, written as quotes",
-      "The agent rewrites until the message holds up"
+      "Prices, ratings and reviews from the first eMAG results page",
+      "Estimates from fixed CPM, CTR and conversion benchmarks per channel",
+      "A/B sample size from a two-proportion z-test (α 0.05, 80% power)"
     ],
-    "priceTitle": "Less than one leu. Really.",
+    "priceTitle": "See exactly what your kit cost.",
     "priceUs": "Campio",
-    "priceUsValue": "≈ $0.01–0.02",
-    "priceUsUnit": "/ campaign",
+    "priceUsValue": "≈ $0.02",
+    "priceUsUnit": "/ kit, before videos",
     "priceThem": "Marketing agency",
     "priceThemValue": "RON 2,500–6,000",
     "priceThemUnit": "/ month, subscription",
-    "priceNote": "Actual AI cost for a campaign, shown transparently with every result.",
+    "priceNote": "Every kit shows its real AI, data and video cost next to your ad budget.",
     "faqTitle": "Frequently asked questions",
     "faq": [
       {
-        "q": "Is the panel made up of real people?",
-        "a": "No. AI simulates the panel based on your audience. It suggests which message may persuade and which objections may arise; it does not predict exact sales."
+        "q": "Are the numbers made up by AI?",
+        "a": "No. Market statistics, budget splits, estimates and A/B test sizes are computed by code from eMAG data and fixed channel benchmarks. The AI chooses the strategy and writes the copy."
       },
       {
-        "q": "Which marketplaces does it work with?",
-        "a": "eMAG Marketplace, Trendyol, Etsy, Amazon, OLX, Facebook Marketplace, Shopify or your own website, and Instagram Shop."
+        "q": "Where does the market data come from?",
+        "a": "The first eMAG search page for your keyword (about 60 products), the most-reviewed product pages, Google Trends for Romania, and, when reachable, Amazon.de, Reddit and BetaList. Each source shows whether it was live, cached or skipped."
       },
       {
-        "q": "Do I need to know marketing?",
-        "a": "Not at all. Describe your product as you would to a friend, and Campio gives you practical steps for this week."
+        "q": "Do I have to fill in a form?",
+        "a": "No. Write one message and add photos if you have them. If the price or budget is missing, Campio asks, with quick answers based on market prices. You can skip and we note the default we used."
       },
       {
-        "q": "Does Campio post for me?",
-        "a": "You get copy and visuals ready to download and publish yourself. Advertising account integrations are available only when configured."
+        "q": "Does Campio post ads for me?",
+        "a": "No. You get the copy, plan and videos to publish yourself. Estimates are based on benchmarks, not guarantees."
       },
       {
         "q": "Is my data safe?",
-        "a": "Accounts use hashed passwords, two-step verification and private sessions. Campaigns and settings belong to your account. Review the operator's privacy policy before using the service."
+        "a": "Accounts use hashed passwords, two-step verification and private sessions. Campaigns, uploads and videos belong to your account."
       }
     ],
     "finalTitle": "Your first campaign is two minutes away.",
@@ -336,96 +282,6 @@
     "resetSuccess": "You can now log in with your new password."
   },
   "wizard": {
-    "title": "New campaign",
-    "steps": [
-      "Product",
-      "Where you sell",
-      "Goal",
-      "Review"
-    ],
-    "stepOf": "Step {n} of 4",
-    "s1Title": "Tell us about your product",
-    "s1Sub": "Describe it as you would to a friend. We'll extract the rest.",
-    "s1Ph": "For example: I sell hand-poured soy candles with a pine scent, 45-hour burn time, RON 89, for people who love cozy evenings at home…",
-    "analyze": "Analyze with AI",
-    "analyzing": "Reading your description…",
-    "reanalyze": "Analyze again",
-    "parsedTitle": "Here's what we understood",
-    "parsedSub": "Check and correct anything. Fields marked AI were filled in automatically.",
-    "fields": {
-      "name": "Name",
-      "category": "Category",
-      "price": "Price",
-      "currency": "Currency",
-      "shortDescription": "Short description",
-      "strengths": "Strengths",
-      "audience": "Target audience",
-      "country": "Country",
-      "link": "Product or competitor link"
-    },
-    "missing": {
-      "price": "We couldn't find the price. Would you like to add it?",
-      "name": "What is your product called?",
-      "category": "Which category does it belong to?",
-      "strengths": "What makes it special? Add 1–3 strengths.",
-      "audience": "Who is it for? This helps us find your audience.",
-      "shortDescription": "",
-      "country": ""
-    },
-    "addStrength": "Add strength",
-    "photo": "Product photo",
-    "photoHint": "We'll use it for the 1080×1080 visual. JPG or PNG.",
-    "photoUpload": "Upload a photo",
-    "photoChange": "Change photo",
-    "linkPh": "https://www.etsy.com/listing/…",
-    "s2Title": "Where do you sell?",
-    "s2Sub": "Choose every place your product is listed.",
-    "marketplaces": {
-      "emag": {
-        "name": "eMAG Marketplace",
-        "d": "Romania's largest marketplace"
-      },
-      "trendyol": {
-        "name": "Trendyol",
-        "d": "Fashion and home, younger audiences"
-      },
-      "etsy": {
-        "name": "Etsy",
-        "d": "Handmade and unique products, worldwide"
-      },
-      "amazon": {
-        "name": "Amazon",
-        "d": "High-volume selling across Europe"
-      },
-      "olx": {
-        "name": "OLX",
-        "d": "Fast and local, with low fees"
-      },
-      "facebook_marketplace": {
-        "name": "Facebook Marketplace",
-        "d": "Local sales through messages"
-      },
-      "shopify": {
-        "name": "Shopify / own website",
-        "d": "Your shop, your rules"
-      },
-      "instagram_shop": {
-        "name": "Instagram Shop",
-        "d": "Shopping directly from posts"
-      }
-    },
-    "integrationsTitle": "Integrations",
-    "integrationsSub": "Connect now or later in Settings.",
-    "s3Title": "Goal and budget",
-    "s3Sub": "What would you like to achieve?",
-    "goal": "Goal",
-    "goals": {
-      "sales": "Sales",
-      "awareness": "Awareness",
-      "traffic": "Traffic"
-    },
-    "budget": "Total budget",
-    "budgetHint": "You can start with RON 200. We recommend RON 500 for 30 days.",
     "tone": "Message tone",
     "tones": {
       "warm": "Warm",
@@ -433,120 +289,10 @@
       "playful": "Playful",
       "direct": "Direct"
     },
-    "duration": "Campaign duration",
-    "durations": {
-      "7": "7 days",
-      "14": "14 days",
-      "30": "30 days",
-      "60": "60 days"
-    },
-    "s4Title": "Review and generate",
-    "s4Sub": "Looks good? Generation takes about 15 seconds.",
-    "generate": "Generate campaign",
-    "summaryTitle": "What we know so far",
-    "summaryEmpty": "Start with a description and we'll fill this in as we learn.",
-    "summaryOpen": "View summary",
-    "reuse": "Reuse settings",
-    "reuseHint": "Last campaign",
-    "errorProduct": "Enter at least your product's name.",
-    "errorMarketplace": "Choose at least one place where you sell."
-  },
-  "generating": {
-    "title": "Building your campaign",
-    "steps": [
-      {
-        "t": "Analyzing your product",
-        "d": "Reading the description and finding what makes it special."
-      },
-      {
-        "t": "Building your audiences",
-        "d": "Two clear segments with meaningful motivations."
-      },
-      {
-        "t": "A simulated panel reacts to 3 messages",
-        "d": "Simulated people click, pause or scroll past."
-      },
-      {
-        "t": "The agent rewrites and retests",
-        "d": "Addressing objections until the message stops improving."
-      },
-      {
-        "t": "Preparing your copy and visual",
-        "d": "Instagram, TikTok, Meta, email and a 1080×1080 image."
-      }
-    ],
-    "scoreboard": "Live panel score",
-    "doneTitle": "Done! Your campaign is here.",
-    "doneCta": "View campaign"
+    "reuse": "Reuse settings"
   },
   "result": {
-    "save": "Save",
-    "share": "Share link",
-    "export": "Export PDF",
-    "launched": "I've launched this campaign",
-    "launchedDone": "Launched",
-    "linkCopied": "Link copied. Anyone with it can view a read-only copy of the campaign.",
-    "savedToast": "Campaign saved.",
-    "launchedToast": "Great! Add your results after 7 days to review how it went.",
-    "sections": [
-      "Who to sell to",
-      "What to say",
-      "Which message works",
-      "Warnings",
-      "A better message with an agent",
-      "Where and how much to spend",
-      "Ready-to-post copy",
-      "The visual",
-      "KPIs and cost"
-    ],
-    "motivations": "Motivations",
-    "positioning": "Positioning",
-    "keyMessage": "Key message",
-    "tone": "Tone",
-    "winner": "Winner",
-    "why": "Why?",
-    "hideWhy": "Hide reactions",
-    "formula": "Score = clicks 50% + stopping the scroll 30% + sharing 20%",
-    "click": "Click",
-    "stop": "Stop",
-    "shareMetric": "Share",
-    "objection": "Objection",
-    "whyMatters": "Why it matters",
-    "fix": "Suggestion",
-    "markResolved": "Mark as resolved",
-    "resolved": "Resolved",
-    "objectionsAddressed": "Objections addressed",
-    "vs": "vs",
-    "paid": "Paid",
-    "organic": "Free / organic",
-    "firstAction": "First action this week",
-    "budgetSplit": "Budget split",
-    "tabs": {
-      "instagram": "Instagram",
-      "tiktok": "TikTok 15s",
-      "meta": "Meta ad",
-      "email": "Email"
-    },
-    "caption": "Caption",
-    "hashtags": "Hashtags",
-    "headline": "Headline",
-    "primaryText": "Primary text",
-    "cta": "Button (CTA)",
-    "subjects": "Email subjects",
-    "chars": "characters",
-    "order": "Order now",
-    "downloadPng": "Download PNG",
-    "lockedTitle": "3 posters + 1 video, coming soon",
-    "lockedSub": "They'll be available in your account when ready.",
-    "poster": "Poster",
-    "video": "Video",
-    "kpiTitle": "30-day targets",
-    "cost": "≈ $0.01–0.02 for this campaign",
-    "disclaimerTitle": "How to read these results",
-    "disclaimer": "The panel is simulated, not made up of real people. Scores suggest which message may be more persuasive and what objections may arise; they do not predict exact sales and can vary between runs.",
-    "addResults": "Add real results",
-    "notFound": "We couldn't find that campaign.",
-    "sectionNav": "Sections"
+    "notFound": "We couldn't find that campaign."
   },
   "results": {
     "title": "Real results",
@@ -569,62 +315,14 @@
       "mediu": "Medium impact",
       "mic": "Low impact"
     },
-    "rerun": "Run an improved round",
     "savedToast": "Results saved. Here's what we learned."
   },
   "dashboard": {
     "hello": "Hi, {name}",
-    "sub": "Here's what deserves your attention this week.",
-    "heroTitle": "Create a new campaign",
-    "heroSub": "Describe a product and get a complete campaign in 2 minutes.",
-    "heroCta": "Start now",
-    "weekAction": "This week's action",
-    "weekActionFrom": "from",
-    "markDone": "I've done it",
-    "yourCampaigns": "Your campaigns",
-    "health": "Health",
-    "resultsPrompt": "How did the {name} campaign go?",
-    "resultsPromptSub": "Add the results and get 3 practical suggestions.",
-    "resultsPromptCta": "Add results",
-    "onboarding": "Your first 7 days",
-    "onboardingItems": [
-      "Explore the demo campaign",
-      "Create your first campaign",
-      "Copy ready-to-post text",
-      "Complete a channel action",
-      "Launch the campaign",
-      "Add real results",
-      "Run an improved round"
-    ],
-    "streak": "Weekly streak",
-    "streakSub": "consecutive weeks with at least one action",
-    "usage": "Credits this month",
-    "usageOf": "{used} of {total} campaigns",
-    "upgrade": "View plans",
-    "tips": "Quick tips",
-    "tipList": [
-      {
-        "t": "Show the price in the first 3 seconds",
-        "d": "Videos that show the price early attract fewer wasted clicks."
-      },
-      {
-        "t": "One photo, three settings",
-        "d": "The same candle on a desk, in the bathroom and by the bed = 3 new pins."
-      },
-      {
-        "t": "Reply to comments in the first hour",
-        "d": "Instagram favors posts that start conversations quickly."
-      },
-      {
-        "t": "Test one thing at a time",
-        "d": "Change only the message or the image so you know what worked."
-      }
-    ],
-    "demoBadge": "Demo"
+    "yourCampaigns": "Your campaigns"
   },
   "campaigns": {
     "title": "Your campaigns",
-    "sub": "All your campaigns in one place.",
     "search": "Search by product or category",
     "filters": {
       "all": "All",
@@ -633,16 +331,9 @@
       "ready": "Ready",
       "launched": "Launched"
     },
-    "compare": "Compare",
-    "compareHint": "Choose 2 campaigns",
-    "compareCta": "Compare the 2",
     "emptyTitle": "No campaigns here yet",
     "emptySub": "Let's make your first one. It takes 2 minutes.",
     "noResults": "No results match your search.",
-    "compareTitle": "Campaign comparison",
-    "budget": "Budget",
-    "winnerScore": "Winning message score",
-    "channels": "Channels",
     "created": "Created"
   },
   "status": {
@@ -653,9 +344,6 @@
   },
   "assets": {
     "title": "Visuals",
-    "sub": "Images from your campaigns. Posters and videos are coming soon.",
-    "square": "1080×1080 visual",
-    "locked": "Coming soon",
     "emptyTitle": "No visuals yet"
   },
   "settings": {
@@ -750,7 +438,7 @@
     "heroAccent": "We give them a voice.",
     "heroBody": "From “what should I post today?” to a complete campaign, with messages, audiences and a clear plan.",
     "candleAlt": "Artisan candle, an example campaign product",
-    "winner": "YOUR WINNING MESSAGE",
+    "winner": "YOUR MAIN MESSAGE",
     "demoMessage1": "A little calm.",
     "demoMessage2": "Lit by you.",
     "ready": "Ready to post",
@@ -786,44 +474,11 @@
     "verificationDemo": "Verify your account for {email}."
   },
   "campaignCopy": {
-    "back": "Back to campaigns",
-    "report": "Your marketing plan",
     "ready": "Ready to make things happen.",
-    "sub": "The right audience. A better message. A plan you can start today.",
-    "simulated": "Example with simulated data",
-    "sections": "In your campaign",
-    "expand": "Expand section",
-    "collapse": "Collapse section",
     "days": "days",
-    "audienceHint": "Start with people who have a reason to choose your product.",
-    "messageHint": "Keep the same idea wherever you share it.",
-    "scoresHint": "Three approaches, one simulated panel. The score compares messages; it doesn't promise sales.",
-    "panelReactions": "Simulated panel reactions",
-    "years": "years",
-    "objections": "Objections to address",
-    "agentHint": "Give your message a second chance before you spend your first leu.",
-    "budgetHint": "Every channel has a role. Start with the first action and build from there.",
-    "totalBudget": "Total budget",
-    "noBudget": "No paid budget",
-    "copyHint": "Made for your product. Read it once more, then publish.",
     "content": "Content",
-    "visual": "Shot",
-    "voice": "Voice / text",
-    "downloadHint": "PNG image · 1080 × 1080 px · ready to post",
-    "downloading": "Preparing your image…",
-    "downloadFailed": "The image couldn't be downloaded. Check your product photo and try again.",
-    "downloadDone": "Visual downloaded.",
-    "noImage": "Your product, front and center.",
-    "futureAssets": "More room for your ideas.",
-    "shareTitle": "Your campaign link is ready",
-    "shareNote": "A read-only link containing a snapshot of this campaign without the uploaded photo. Future changes will not update this copy.",
-    "sharePrivate": "Share it only with people you want to see your campaign details.",
-    "shareCopy": "Copy link",
-    "shareError": "We couldn't prepare the link. Please try again.",
     "invalidShare": "This link doesn't contain a valid campaign.",
     "backHome": "Back to Campio",
-    "edit": "Edit results",
-    "launched": "Campaign marked as launched. You can now add your results.",
     "error": "We couldn't save your changes. Please try again.",
     "retry": "Try again",
     "saved": "Saved to your account.",
@@ -836,9 +491,7 @@
     "noOrders": "No orders",
     "delta": "compared with target",
     "estimate": "Indicative target",
-    "savedResults": "Results saved",
-    "perCampaign": "for this campaign",
-    "copies": "Ready-to-post copy"
+    "savedResults": "Results saved"
   },
   "settingsCopy": {
     "currentPasswordError": "Enter your current password.",
@@ -905,57 +558,8 @@
     "colorLabel": "Brand color {index}",
     "connected": "Connected"
   },
-  "wizardCopy": {
-    "eyebrow": "A good idea deserves a good campaign.",
-    "saved": "Progress saved on this device",
-    "demo": "Demo AI mode · using example campaign content",
-    "example": "Try an example",
-    "exampleText": "I sell hand-poured soy candles with a pine scent. They burn for 45 hours and cost RON 89. For lovers of cozy evenings and thoughtful gifts.",
-    "manual": "I'd rather fill it in myself",
-    "startAgain": "Start over",
-    "info": "You know the product. We organize the ideas.",
-    "photoError": "Choose a JPG, PNG or WebP image no larger than 2 MB.",
-    "photoRemove": "Remove photo",
-    "aiHint": "AI analysis. Check the details before continuing.",
-    "strengthHint": "Separate strengths with commas",
-    "marketplaceHint": "You can select multiple platforms.",
-    "preview": "Campaign preview",
-    "noPhoto": "Your product photo appears here",
-    "noPrice": "Price not entered",
-    "product": "Your product",
-    "channels": "Platforms",
-    "productEmpty": "Product name",
-    "descriptionEmpty": "Your product's story starts with you.",
-    "deliverables": "9 deliverables. One clear direction.",
-    "deliverablesHint": "Audiences, tested messages, a budget plan, copy and a ready-to-use visual.",
-    "edit": "You can return to any step to make changes.",
-    "generateHint": "Nothing is published automatically. You choose when to launch.",
-    "simulationConnect": "Integration is not configured yet.",
-    "simulationDisconnect": "Integration disconnected.",
-    "summaryNote": "Your campaign at a glance",
-    "missingDescription": "Add a short product description.",
-    "invalidBudget": "Choose a budget between RON 50 and RON 20,000.",
-    "invalidLink": "Enter a complete link starting with https://.",
-    "parseError": "Describe your product in at least 10 characters.",
-    "error": "We couldn't save your changes. Please try again.",
-    "ready": "Everything is ready",
-    "generationStep": "Step {n} of 5",
-    "generationSub": "You have the idea. We'll find the right words.",
-    "generationNote": "AI-generated content · panel reactions and scores are simulated",
-    "generationError": "Campaign generation couldn't be loaded.",
-    "missingCampaign": "This campaign doesn't exist or is no longer available.",
-    "back": "Back to campaigns",
-    "finished": "9 deliverables, ready to come to life.",
-    "waiting": "Preparing",
-    "inProgress": "In progress",
-    "completed": "Completed",
-    "message": "Message",
-    "live": "LIVE"
-  },
   "extra": {
     "languageLabel": "Interface language",
-    "campaignLanguage": "Campaign language",
-    "campaignLanguageHint": "This controls the generated content separately from the app language. Romanian is suggested for eMAG, Trendyol and OLX.",
     "languageEnglish": "English",
     "languageRomanian": "Română",
     "notFoundTitle": "404 · Page not found",
@@ -973,9 +577,6 @@
     "currencyRON": "RON · Romanian leu",
     "currencyEUR": "EUR · Euro",
     "currencyUSD": "USD · US dollar",
-    "strengthPlaceholder": "Handmade, natural ingredients",
-    "minimumBudget": "RON 50",
-    "maximumBudget": "RON 20,000",
     "countryRomania": "Romania",
     "loadingCampaign": "Loading campaign",
     "loadingResults": "Loading results",
@@ -983,7 +584,6 @@
     "loading": "Loading…",
     "verificationCode": "Verification code",
     "digit": "Digit",
-    "campaignHealth": "Campaign health",
     "progress": "Progress",
     "calculated": "Calculated",
     "ai": "AI",
@@ -1003,16 +603,6 @@
     "toggleSidebar": "Toggle sidebar",
     "carousel": "Carousel",
     "slide": "Slide",
-    "previewUrl": "campio.app/app/campaigns/candle",
-    "messageB": "Message B",
-    "messageC": "Message C",
-    "budget": "Budget",
-    "budget500": "RON 500",
-    "previewMessage": "Your peaceful evening starts with a clean flame.",
-    "orderNow": "Order now",
-    "round2": "Round 2",
-    "previewPerson": "Ioana, 31",
-    "previewQuote": "“Exactly the feeling I want after a long day.”",
     "candleAlt": "River & Pine artisan candle on a table beside pine sprigs",
     "faq": "FAQ",
     "homeLabel": "Campio, home",
@@ -1041,42 +631,23 @@
     "brandName": "Campio",
     "previewBrand": "RIVER & PINE",
     "previewHandle": "riverandpine.studio",
-    "previewEtsy": "Etsy",
-    "previewTrendyol": "trendyol",
-    "previewShopify": "shopify",
-    "previewInstagram": "Instagram",
-    "moreInformation": "A few more details",
-    "assetFailed": "Asset generation failed. Please try again.",
     "download": "Download",
-    "mediaEmpty": "Your generated media will appear here.",
     "totpTitle": "Authenticator security",
     "totpDisableHint": "Enter a current authenticator code to disable two-step verification.",
     "totpSetupHint": "Add the setup key to your authenticator app, then enter its current code.",
     "openAuthenticator": "Open authenticator app",
     "totpCode": "Authenticator code",
     "logoPrefix": "campi",
-    "logoEnd": "o",
-    "previewPricePlatform": "RON 89 · Etsy",
-    "versus39": "vs 39",
-    "previewInitial": "I",
-    "previewCost": "≈ $0.01 / campaign",
-    "scoreMaximum": "/ 100",
     "secondsShort": "s",
     "currencyPer": "RON /",
     "sharePath": "/share/",
-    "orderArrow": "Order now →",
     "previewMonogram": "r&p",
-    "previewEmag": "eMAG",
-    "previewAmazon": "amazon",
     "campioDot": "Campio.",
     "photoSize": "· Max. 2 MB",
     "currencyRONShort": "RON",
     "days": "days",
-    "png": "· PNG",
-    "score": "Score",
     "socialIcons": "♡ ↗",
-    "ogTagline": "One product. One campaign. ↗",
-    "currency89": "89"
+    "ogTagline": "One product. One campaign. ↗"
   },
   "errors": {
     "invalid_request": "Check the details and try again.",
@@ -1120,5 +691,24 @@
     "reset_expired": "This reset link is invalid or expired. Request a new link.",
     "already_enabled": "Two-step verification is already enabled.",
     "unknown_error": "Something went wrong. Please try again."
+  },
+  "landingKit": {
+    "median": "eMAG median",
+    "yourPrice": "Your price",
+    "example": "Example: aluminium laptop stand",
+    "channels": "Budget per channel",
+    "orders": "est. orders",
+    "clicks": "clicks",
+    "computed": "Computed from fixed benchmarks",
+    "persona": "Persona",
+    "personaName": "Andrei, remote developer",
+    "personaHook": "Your neck will thank you.",
+    "complaint": "Competitors' complaint",
+    "complaintText": "“Wobbly, doesn't open wide enough”",
+    "message": "Our message",
+    "messageText": "Doesn't wobble. Ever.",
+    "cost": "Kit cost: 1.03 lei",
+    "trend": "Google Trends · 5 years",
+    "reel": "AI-edited reel"
   }
 }

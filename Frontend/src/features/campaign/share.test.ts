@@ -1,31 +1,39 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { seedCampaigns } from "@/test/fixtures/campaigns";
-import { makeShareUrl, readSharedCampaign } from "./share";
+import { kitSchema } from "@/services/kit";
+import completed from "@/test/fixtures/kit-completed.json";
+import { makeShareUrl, readSharedKit } from "./share";
 
 afterEach(() => window.history.replaceState(null, "", "/"));
 
-describe("read-only campaign snapshots", () => {
-  it("carries a validated campaign to another browser without local storage", async () => {
-    const campaign = seedCampaigns()[0]!;
-    const url = await makeShareUrl(campaign);
-    window.history.replaceState(null, "", new URL(url).pathname + new URL(url).hash);
-    const snapshot = readSharedCampaign();
-    expect(snapshot?.id).toBe(campaign.id);
-    expect(snapshot?.product.name).toBe(campaign.product.name);
-    expect(snapshot?.messages).toEqual(campaign.messages);
-    expect(Object.keys(snapshot ?? {})).not.toContain("token");
+const open = (url: string) => {
+  const u = new URL(url);
+  window.history.replaceState(null, "", u.pathname + u.hash);
+};
+
+describe("read-only kit snapshots", () => {
+  it("carries a validated kit to another browser without a server round-trip", () => {
+    const kit = kitSchema.parse({
+      ...completed,
+      ui_data: { results: [{ channelId: "meta" }] },
+    });
+    open(makeShareUrl(kit));
+    const snapshot = readSharedKit();
+    expect(snapshot?.id).toBe(kit.id);
+    expect(snapshot?.input.product_name).toBe(kit.input.product_name);
+    expect(snapshot?.plan?.totals).toEqual(kit.plan?.totals);
   });
 
-  it("omits locally uploaded images so the share URL stays portable", async () => {
-    const campaign = seedCampaigns()[0]!;
-    campaign.product.photoUrl = "data:image/png;base64,c2VjcmV0";
-    const url = await makeShareUrl(campaign);
-    window.history.replaceState(null, "", new URL(url).pathname + new URL(url).hash);
-    expect(readSharedCampaign()?.product.photoUrl).toBeUndefined();
+  it("drops private data: ui_data, uploads, intake answers and Reddit quotes", () => {
+    open(makeShareUrl(kitSchema.parse(completed)));
+    const snapshot = readSharedKit()!;
+    expect(snapshot.ui_data).toEqual({});
+    expect(snapshot.input.image_asset_ids).toEqual([]);
+    expect(snapshot.intake.answers).toEqual([]);
+    expect(snapshot.web?.discussions).toEqual([]);
   });
 
   it("rejects malformed snapshot data", () => {
     window.history.replaceState(null, "", "/share/test#data=broken%%%");
-    expect(readSharedCampaign()).toBeNull();
+    expect(readSharedKit()).toBeNull();
   });
 });

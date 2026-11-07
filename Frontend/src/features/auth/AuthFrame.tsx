@@ -68,7 +68,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
                   {authCopy.ready} <ArrowUpRight className="ml-1 inline size-3" />
                 </span>
                 <span className="flex items-center gap-1 text-xs font-semibold">
-                  <Check className="size-4 text-success-ink" /> 89 / 100
+                  <Check className="size-4 text-success-ink" /> eMAG
                 </span>
               </div>
             </div>

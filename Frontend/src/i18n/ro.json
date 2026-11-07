@@ -2,65 +2,15 @@
   "workspace": {
     "demoMode": "Mod demonstrativ",
     "demoNote": "Modificările sunt salvate în siguranță în contul tău.",
-    "welcome": "Bine ai revenit în atelierul tău de idei.",
-    "today": "Un pas mic azi. Un brand mai mare mâine.",
-    "overview": "Privire de ansamblu",
-    "active": "Campanii pregătite",
-    "completed": "Acțiuni bifate",
-    "investment": "Buget planificat",
-    "launchpad": "O idee bună merită",
-    "launchpadAccent": "o campanie pe măsură.",
-    "heroDescription": "Tu aduci produsul. Noi punem la un loc publicul potrivit, mesajul și un plan gata de pus în mișcare.",
     "newCampaign": "Hai să creăm ceva bun",
-    "step": "PASUL URMĂTOR",
-    "weeklyAction": "Puțin azi, mai departe mâine.",
-    "done": "Acțiune bifată. Încă un pas înainte!",
     "allDone": "Ai bifat toate acțiunile. E timpul să vezi rezultatele.",
-    "days": "zile",
     "open": "Deschide campania",
     "delete": "Șterge",
     "deleted": "Campania a fost ștearsă.",
     "deleteCampaign": "Ștergi această campanie?",
     "deleteCampaignBody": "Campania și rezultatele ei vor fi șterse definitiv din contul tău. Această acțiune nu poate fi anulată.",
-    "week": "Săptămâna ta",
-    "weeklyDays": [
-      "L",
-      "M",
-      "M",
-      "J",
-      "V",
-      "S",
-      "D"
-    ],
-    "activity": "Acțiunile bifate în această săptămână",
-    "noActivity": "Prima bifă începe cu tine.",
-    "getStarted": "Un început bun",
-    "onboardSub": "Șapte pași mici spre prima ta campanie.",
-    "usageDescription": "Campanii create în această lună",
-    "demoCredits": "Limită demonstrativă · 10 campanii",
-    "tipsTitle": "Un pic de inspirație",
-    "nextTip": "Sfatul următor",
-    "previousTip": "Sfatul anterior",
-    "resultsLabel": "SĂ VEDEM CE A FUNCȚIONAT",
     "resultsTitle": "Ai postat. Cum a mers?",
-    "resultsDescription": "Adaugă cifrele pentru campania ta și descoperă următorul pas.",
-    "findCampaign": "Găsește următoarea idee bună.",
     "clearSearch": "Resetează filtrele",
-    "compareSelected": "campanii selectate",
-    "selectTwo": "Selectează exact două campanii pentru comparație.",
-    "templates": "Setările bune merită păstrate.",
-    "templatesSub": "Pornește de la o campanie existentă. Produsul, bugetul și tonul se completează automat.",
-    "useTemplate": "Refolosește o campanie",
-    "campaignCount": "campanii",
-    "allVisuals": "Toate vizualele",
-    "images": "Imagini",
-    "posters": "Postere",
-    "videos": "Video",
-    "download": "Descarcă PNG",
-    "viewCampaign": "Vezi campania",
-    "assetsNote": "Un loc pentru tot ce face brandul tău să se vadă.",
-    "assetsSoon": "Mai mult loc pentru creativitate.",
-    "assetsSoonBody": "Pachetele de 3 postere și video de 15 secunde vor apărea aici când funcția este disponibilă.",
     "notificationsDescription": "Micile lucruri care îți țin campaniile în mișcare.",
     "notificationError": "Nu am putut încărca notificările.",
     "theme": "Schimbă tema",
@@ -75,21 +25,17 @@
     "aboutBody": "Campio ajută micile afaceri să treacă de la un produs bun la un plan de marketing clar, cu publicuri, texte gata de postat și un buget practic.",
     "heroLabel": "MAI PUȚIN HAOS. MAI MULTĂ INSPIRAȚIE.",
     "livePreview": "O idee. O campanie întreagă.",
-    "previewTag": "CAMPANIE EXEMPLU",
     "previewProduct": "Lumânare River & Pine",
     "previewMessage": "Fă loc pentru puțină liniște.",
     "previewNote": "Ceară de soia. Turnată cu grijă. 89 lei.",
-    "previewReady": "Campania ta e gata",
-    "previewReadySub": "9 livrabile. Un singur loc.",
-    "tested": "Mesaj testat în panel simulat",
+    "previewReady": "Kitul tău e gata",
+    "previewReadySub": "Piață, public, texte, plan și video-uri.",
+    "tested": "Prețul tău vs medianul eMAG",
     "aiPartner": "Micul tău avantaj creativ",
     "trustworthy": "Gândit pentru magazine mici. Cu idei mari.",
-    "platforms": "Se potrivește cu locul în care vinzi",
+    "platforms": "Construit pe date reale din",
     "howEyebrow": "DE LA «CE POSTEZ?» LA «GATA, AM POSTAT.»",
     "bentoEyebrow": "O CAMPANIE. TOATE PIESELE.",
-    "allIncluded": "Gata să fie puse la treabă.",
-    "panelLabel": "PERSONA SIMULATĂ",
-    "panelQuote": "Îmi place că știu exact ce primesc și cât costă. Aș salva postarea.",
     "costEstimate": "Estimare tehnică demonstrativă, nu preț final de abonament.",
     "agencyLabel": "Exemplu orientativ de abonament",
     "faqSub": "E firesc să ai întrebări. Avem răspunsuri.",
@@ -154,102 +100,102 @@
     "heroA": "Marketingul,",
     "heroB": "reinventat",
     "heroC": "cu AI.",
-    "heroSub": "Descrii produsul ca unui prieten. Campio îți dă publicul, mesajul testat, textele și vizualul, gata de postat azi.",
+    "heroSub": "Descrie produsul într-un mesaj și adaugă o poză. Campio citește piața eMAG, îți găsește publicul, scrie listarea și reclamele, planifică bugetul pe patru săptămâni și face video-uri scurte.",
     "heroCta": "Creează campanie de marketing",
     "heroSecondary": "Vezi un exemplu",
-    "heroNote": "Fără card. Prima campanie în sub 2 minute.",
-    "howTitle": "Trei pași. Două minute.",
+    "heroNote": "Cifrele de piață vin din date reale eMAG și sunt calculate de cod, nu ghicite de AI.",
+    "howTitle": "Un mesaj. Un kit de lansare.",
     "how": [
       {
-        "t": "Spune-ne despre produs",
-        "d": "Scrii liber, ca într-un mesaj. AI-ul extrage prețul, publicul și punctele forte."
+        "t": "Descrie produsul",
+        "d": "Scrie liber și adaugă poze. AI-ul întreabă doar ce lipsește, cum ar fi prețul sau bugetul de reclame."
       },
       {
-        "t": "Alege unde vinzi",
-        "d": "eMAG, Etsy, Trendyol, Instagram și altele. Bugetul și obiectivul le alegi tu."
+        "t": "Citim piața",
+        "d": "~60 de concurenți eMAG cu prețuri și recenzii, Google Trends, plus Amazon.de, Reddit și BetaList."
       },
       {
-        "t": "Primești campania",
-        "d": "Mesaje testate pe un panel simulat, texte gata scrise, plan de buget și vizual."
+        "t": "Primești kitul",
+        "d": "Persona, poziționare, listare, reclame, plan pe 4 săptămâni cu teste A/B și video-uri făcute de AI."
       }
     ],
-    "bentoTitle": "9 livrabile, într-o singură campanie.",
-    "bentoSub": "Tot ce ar face o agenție în prima săptămână, gata înainte să-ți termini cafeaua.",
+    "bentoTitle": "Tot ce îți trebuie ca să lansezi pe eMAG, într-un kit.",
+    "bentoSub": "Ce ar face o agenție în primele săptămâni, gata în aproximativ un minut, cu fiecare cifră legată de date.",
     "bento": [
       {
-        "t": "Cui să vinzi",
-        "d": "2 segmente clare, cu vârstă, platforme și motivații."
+        "t": "Analiza pieței",
+        "d": "Distribuția prețurilor, medianul vs prețul tău, rating-uri, vânzători de top și Google Trends pe 5 ani."
+      },
+      {
+        "t": "În afara eMAG",
+        "d": "Prețuri Amazon.de, discuții Reddit și produse noi de pe BetaList, când sunt disponibile."
+      },
+      {
+        "t": "Cine cumpără",
+        "d": "2–3 persona cu motivații, obiecții și locurile unde își petrec timpul online."
       },
       {
         "t": "Ce să spui",
-        "d": "Poziționare și mesaj-cheie, pe tonul tău."
+        "d": "Nemulțumirile clienților concurenței transformate în mesaje pe care le poți dovedi."
       },
       {
-        "t": "Ce mesaj funcționează",
-        "d": "3 mesaje testate, câștigătorul marcat."
+        "t": "Listare și reclame",
+        "d": "Titluri eMAG, descriere, puncte cheie, cuvinte cheie, reclame pe canal și postări social media."
       },
       {
-        "t": "Avertismente",
-        "d": "Ce te poate costa înainte să postezi."
+        "t": "Unde să cheltui",
+        "d": "Buget pe canal cu afișări, click-uri, comenzi și ROAS estimate."
       },
       {
-        "t": "Agentul care rescrie",
-        "d": "Îmbunătățește mesajul până nu mai crește."
+        "t": "Teste A/B",
+        "d": "Mesaj A vs B, cu eșantionul, costul și zilele de care are nevoie fiecare test."
       },
       {
-        "t": "Unde și cât cheltui",
-        "d": "Împărțirea bugetului pe canale."
+        "t": "Video-uri scurte",
+        "d": "Clipuri dintr-un model video, montate într-un reel vertical de un editor AI."
       },
       {
-        "t": "Texte gata scrise",
-        "d": "Instagram, TikTok, Meta, email."
-      },
-      {
-        "t": "Vizualul",
-        "d": "Imagine 1080×1080 cu mesajul câștigător."
-      },
-      {
-        "t": "KPI-uri și cost",
-        "d": "Ținte pe 30 de zile, cost transparent."
+        "t": "Cost și chat",
+        "d": "Costul real al kitului și un chat care rescrie texte și simulează bugete."
       }
     ],
     "panelEyebrow": "Încredere",
-    "panelTitle": "Panel simulat, testat înainte să plătești reclame.",
-    "panelBody": "Fiecare mesaj e citit de persoane simulate din publicul tău. Vezi cine ar da click, cine s-ar opri din scroll și ce obiecții apar, înainte să cheltui un leu.",
+    "panelTitle": "Codul calculează cifrele. AI-ul scrie textele.",
+    "panelBody": "Statisticile de piață, împărțirea bugetului, afișările, click-urile, comenzile, ROAS-ul și eșantioanele testelor A/B sunt calculate din date și din benchmark-uri fixe pe canal. AI-ul alege strategia și scrie textele și nu are voie să inventeze cifre.",
     "panelPoints": [
-      "Scor transparent: click 50%, oprire 30%, share 20%",
-      "Obiecții simulate, scrise ca citate",
-      "Agentul rescrie până mesajul rezistă"
+      "Prețuri, rating-uri și recenzii de pe prima pagină de rezultate eMAG",
+      "Estimări din benchmark-uri fixe de CPM, CTR și conversie pe canal",
+      "Eșantionul testelor A/B dintr-un test z pe două proporții (α 0,05, putere 80%)"
     ],
-    "priceTitle": "Mai puțin decât un leu. Pe bune.",
+    "priceTitle": "Vezi exact cât a costat kitul.",
     "priceUs": "Campio",
-    "priceUsValue": "≈ $0.01–0.02",
-    "priceUsUnit": "/ campanie",
+    "priceUsValue": "≈ 0,02 $",
+    "priceUsUnit": "/ kit, fără video",
     "priceThem": "Agenție de marketing",
     "priceThemValue": "2.500–6.000 lei",
     "priceThemUnit": "/ lună, abonament",
-    "priceNote": "Costul real al AI-ului pentru o campanie, afișat transparent în fiecare rezultat.",
+    "priceNote": "Fiecare kit își arată costul real de AI, date și video lângă bugetul de reclame.",
     "faqTitle": "Întrebări frecvente",
     "faq": [
       {
-        "q": "Panelul e format din oameni reali?",
-        "a": "Nu. Panelul e simulat cu AI, pe baza publicului tău. Îți arată ce mesaj e probabil mai convingător și ce obiecții pot apărea; nu prezice vânzări exacte."
+        "q": "Cifrele sunt inventate de AI?",
+        "a": "Nu. Statisticile de piață, împărțirea bugetului, estimările și dimensiunea testelor A/B sunt calculate de cod din date eMAG și benchmark-uri fixe pe canal. AI-ul alege strategia și scrie textele."
       },
       {
-        "q": "Pe ce marketplace-uri funcționează?",
-        "a": "eMAG Marketplace, Trendyol, Etsy, Amazon, OLX, Facebook Marketplace, Shopify sau site propriu și Instagram Shop."
+        "q": "De unde vin datele de piață?",
+        "a": "Prima pagină de căutare eMAG pentru cuvântul tău cheie (circa 60 de produse), paginile cu cele mai multe recenzii, Google Trends pentru România și, când sunt accesibile, Amazon.de, Reddit și BetaList. Fiecare sursă arată dacă a fost live, din cache sau sărită."
       },
       {
-        "q": "Trebuie să știu marketing?",
-        "a": "Deloc. Descrii produsul ca unui prieten, iar Campio îți dă pași concreți pentru săptămâna asta."
+        "q": "Trebuie să completez un formular?",
+        "a": "Nu. Scrie un mesaj și adaugă poze dacă ai. Dacă lipsește prețul sau bugetul, Campio te întreabă, cu răspunsuri rapide din prețurile pieței. Poți sări peste, iar noi notăm valoarea implicită folosită."
       },
       {
-        "q": "Postează Campio în locul meu?",
-        "a": "Încă nu. Primești textele și vizualul gata de copiat. Integrările cu Meta, Google și TikTok Ads vin în curând."
+        "q": "Campio publică reclamele pentru mine?",
+        "a": "Nu. Primești textele, planul și video-urile ca să le publici tu. Estimările se bazează pe benchmark-uri, nu sunt garanții."
       },
       {
         "q": "Datele mele sunt în siguranță?",
-        "a": "Conturile folosesc parole criptate prin hashing, verificare în doi pași și sesiuni private. Campaniile și preferințele aparțin contului tău. Consultă politica de confidențialitate a operatorului înainte de utilizare."
+        "a": "Conturile folosesc parole criptate, verificare în doi pași și sesiuni private. Campaniile, fișierele încărcate și video-urile aparțin contului tău."
       }
     ],
     "finalTitle": "Prima ta campanie e la două minute distanță.",
@@ -336,96 +282,6 @@
     "resetSuccess": "Te poți autentifica acum cu parola nouă."
   },
   "wizard": {
-    "title": "Campanie nouă",
-    "steps": [
-      "Produs",
-      "Unde vinzi",
-      "Obiectiv",
-      "Verifică"
-    ],
-    "stepOf": "Pasul {n} din 4",
-    "s1Title": "Spune-ne despre produs",
-    "s1Sub": "Descrie produsul cum ai explica unui prieten. Noi extragem restul.",
-    "s1Ph": "Ex: Vând lumânări din ceară de soia turnate manual, cu parfum de pin, ard 45 de ore, 89 lei, pentru cine iubește serile cozy acasă…",
-    "analyze": "Analizează cu AI",
-    "analyzing": "Citim descrierea…",
-    "reanalyze": "Analizează din nou",
-    "parsedTitle": "Iată ce am înțeles",
-    "parsedSub": "Verifică și corectează orice. Câmpurile marcate AI au fost completate automat.",
-    "fields": {
-      "name": "Nume",
-      "category": "Categorie",
-      "price": "Preț",
-      "currency": "Monedă",
-      "shortDescription": "Descriere scurtă",
-      "strengths": "Puncte forte",
-      "audience": "Public țintă",
-      "country": "Țară",
-      "link": "Link produs sau concurent"
-    },
-    "missing": {
-      "price": "Nu am găsit prețul, vrei să îl adaugi?",
-      "name": "Cum se numește produsul?",
-      "category": "În ce categorie intră produsul?",
-      "strengths": "Ce îl face special? Adaugă 1–3 puncte forte.",
-      "audience": "Pentru cine e produsul? Ne ajută să găsim publicul.",
-      "shortDescription": "",
-      "country": ""
-    },
-    "addStrength": "Adaugă punct forte",
-    "photo": "Poza produsului",
-    "photoHint": "O folosim pentru vizualul 1080×1080. JPG sau PNG.",
-    "photoUpload": "Încarcă o poză",
-    "photoChange": "Schimbă poza",
-    "linkPh": "https://www.etsy.com/listing/…",
-    "s2Title": "Unde vinzi?",
-    "s2Sub": "Alege toate locurile unde e listat produsul.",
-    "marketplaces": {
-      "emag": {
-        "name": "eMAG Marketplace",
-        "d": "Cel mai mare marketplace din România"
-      },
-      "trendyol": {
-        "name": "Trendyol",
-        "d": "Modă și casă, public tânăr"
-      },
-      "etsy": {
-        "name": "Etsy",
-        "d": "Handmade și produse unice, global"
-      },
-      "amazon": {
-        "name": "Amazon",
-        "d": "Vânzare în Europa, volum mare"
-      },
-      "olx": {
-        "name": "OLX",
-        "d": "Rapid, local, fără comisioane mari"
-      },
-      "facebook_marketplace": {
-        "name": "Facebook Marketplace",
-        "d": "Vânzare locală, prin mesaje"
-      },
-      "shopify": {
-        "name": "Shopify / site propriu",
-        "d": "Magazinul tău, regulile tale"
-      },
-      "instagram_shop": {
-        "name": "Instagram Shop",
-        "d": "Cumpărare direct din postări"
-      }
-    },
-    "integrationsTitle": "Integrări",
-    "integrationsSub": "Conectează-le acum sau mai târziu, din Setări.",
-    "s3Title": "Obiectiv și buget",
-    "s3Sub": "Ce vrei să obții în perioada asta?",
-    "goal": "Obiectiv",
-    "goals": {
-      "sales": "Vânzări",
-      "awareness": "Notorietate",
-      "traffic": "Trafic"
-    },
-    "budget": "Buget total",
-    "budgetHint": "Poți începe și cu 200 lei. Recomandăm 500 lei pentru 30 de zile.",
     "tone": "Tonul mesajelor",
     "tones": {
       "warm": "Cald",
@@ -433,120 +289,10 @@
       "playful": "Jucăuș",
       "direct": "Direct"
     },
-    "duration": "Durata campaniei",
-    "durations": {
-      "7": "7 zile",
-      "14": "14 zile",
-      "30": "30 de zile",
-      "60": "60 de zile"
-    },
-    "s4Title": "Verifică și generează",
-    "s4Sub": "Arată bine? Generarea durează cam 15 secunde.",
-    "generate": "Generează campania",
-    "summaryTitle": "Ce știm până acum",
-    "summaryEmpty": "Începe cu o descriere și completăm aici pe măsură ce afli.",
-    "summaryOpen": "Vezi rezumatul",
-    "reuse": "Refolosește setările",
-    "reuseHint": "Ultima campanie",
-    "errorProduct": "Completează cel puțin numele produsului.",
-    "errorMarketplace": "Alege cel puțin un loc unde vinzi."
-  },
-  "generating": {
-    "title": "Construim campania ta",
-    "steps": [
-      {
-        "t": "Analizăm produsul",
-        "d": "Citim descrierea și găsim ce îl face special."
-      },
-      {
-        "t": "Construim publicurile",
-        "d": "Două segmente clare, cu motivații reale."
-      },
-      {
-        "t": "Panelul simulat reacționează la 3 mesaje",
-        "d": "Persoane simulate dau click, se opresc sau trec mai departe."
-      },
-      {
-        "t": "Agentul rescrie mesajul și retestează",
-        "d": "Răspunde la obiecții până mesajul nu mai crește."
-      },
-      {
-        "t": "Pregătim textele și vizualul",
-        "d": "Instagram, TikTok, Meta, email și imaginea 1080×1080."
-      }
-    ],
-    "scoreboard": "Scor live în panel",
-    "doneTitle": "Gata! Campania ta e aici.",
-    "doneCta": "Vezi campania"
+    "reuse": "Refolosește setările"
   },
   "result": {
-    "save": "Salvează",
-    "share": "Distribuie link",
-    "export": "Exportă PDF",
-    "launched": "Am lansat campania",
-    "launchedDone": "Lansată",
-    "linkCopied": "Link copiat. Oricine îl are poate vedea campania (doar citire).",
-    "savedToast": "Campania a fost salvată.",
-    "launchedToast": "Super! Îți amintim peste 7 zile să adaugi rezultatele.",
-    "sections": [
-      "Cui să vinzi",
-      "Ce să spui",
-      "Ce mesaj funcționează",
-      "Avertismente",
-      "Mesaj mai bun prin agent",
-      "Unde și cât cheltui",
-      "Texte gata scrise",
-      "Vizualul",
-      "KPI-uri și cost"
-    ],
-    "motivations": "Motivații",
-    "positioning": "Poziționare",
-    "keyMessage": "Mesajul-cheie",
-    "tone": "Ton",
-    "winner": "Câștigător",
-    "why": "De ce?",
-    "hideWhy": "Ascunde reacțiile",
-    "formula": "Scor = click 50% + oprire din scroll 30% + share 20%",
-    "click": "Click",
-    "stop": "Oprire",
-    "shareMetric": "Share",
-    "objection": "Obiecție",
-    "whyMatters": "De ce contează",
-    "fix": "Sugestie",
-    "markResolved": "Marchează ca rezolvat",
-    "resolved": "Rezolvat",
-    "objectionsAddressed": "Obiecții rezolvate",
-    "vs": "vs",
-    "paid": "Plătit",
-    "organic": "Gratuit / organic",
-    "firstAction": "Prima acțiune săptămâna asta",
-    "budgetSplit": "Împărțirea bugetului",
-    "tabs": {
-      "instagram": "Instagram",
-      "tiktok": "TikTok 15s",
-      "meta": "Reclamă Meta",
-      "email": "Email"
-    },
-    "caption": "Caption",
-    "hashtags": "Hashtag-uri",
-    "headline": "Titlu",
-    "primaryText": "Text principal",
-    "cta": "Buton (CTA)",
-    "subjects": "Subiecte de email",
-    "chars": "caractere",
-    "order": "Comandă acum",
-    "downloadPng": "Descarcă PNG",
-    "lockedTitle": "3 postere + 1 video, în curând",
-    "lockedSub": "Le activăm automat în contul tău când sunt gata.",
-    "poster": "Poster",
-    "video": "Video",
-    "kpiTitle": "Ținte pe 30 de zile",
-    "cost": "≈ $0.01–0.02 pentru această campanie",
-    "disclaimerTitle": "Cum să citești rezultatele",
-    "disclaimer": "Panelul este simulat, nu sunt oameni reali. Scorurile arată ce mesaj e probabil mai convingător și ce obiecții pot apărea; nu prezic vânzări exacte și pot varia ușor între rulări.",
-    "addResults": "Adaugă rezultatele reale",
-    "notFound": "Nu am găsit campania asta.",
-    "sectionNav": "Secțiuni"
+    "notFound": "Nu am găsit campania asta."
   },
   "results": {
     "title": "Rezultate reale",
@@ -569,62 +315,14 @@
       "mediu": "Impact mediu",
       "mic": "Impact mic"
     },
-    "rerun": "Rulează o rundă îmbunătățită",
     "savedToast": "Rezultate salvate. Iată ce am învățat."
   },
   "dashboard": {
     "hello": "Salut, {name}",
-    "sub": "Iată ce merită atenția ta săptămâna asta.",
-    "heroTitle": "Creează campanie nouă",
-    "heroSub": "Descrie un produs și primești campania completă în 2 minute.",
-    "heroCta": "Începe acum",
-    "weekAction": "Acțiunea săptămânii",
-    "weekActionFrom": "din",
-    "markDone": "Am făcut-o",
-    "yourCampaigns": "Campaniile tale",
-    "health": "Sănătate",
-    "resultsPrompt": "Cum a mers campania {name}?",
-    "resultsPromptSub": "Adaugă rezultatele și primești 3 sugestii concrete.",
-    "resultsPromptCta": "Adaugă rezultatele",
-    "onboarding": "Primii 7 zile",
-    "onboardingItems": [
-      "Explorează campania demo",
-      "Creează prima ta campanie",
-      "Copiază un text gata scris",
-      "Bifează prima acțiune dintr-un canal",
-      "Lansează campania",
-      "Adaugă rezultatele reale",
-      "Rulează o rundă îmbunătățită"
-    ],
-    "streak": "Streak săptămânal",
-    "streakSub": "săptămâni la rând cu cel puțin o acțiune",
-    "usage": "Credite luna asta",
-    "usageOf": "{used} din {total} campanii",
-    "upgrade": "Vezi planurile",
-    "tips": "Sfaturi rapide",
-    "tipList": [
-      {
-        "t": "Prețul în primele 3 secunde",
-        "d": "Videourile care arată prețul devreme au mai puține click-uri inutile."
-      },
-      {
-        "t": "O poză, trei decoruri",
-        "d": "Aceeași lumânare pe birou, la baie și pe noptieră = 3 pin-uri noi."
-      },
-      {
-        "t": "Răspunde la comentarii în prima oră",
-        "d": "Algoritmul Instagram favorizează postările cu conversații rapide."
-      },
-      {
-        "t": "Testează un singur lucru odată",
-        "d": "Schimbă doar mesajul sau doar imaginea, ca să știi ce a funcționat."
-      }
-    ],
-    "demoBadge": "Demo"
+    "yourCampaigns": "Campaniile tale"
   },
   "campaigns": {
     "title": "Campaniile tale",
-    "sub": "Toate campaniile, într-un singur loc.",
     "search": "Caută după produs sau categorie",
     "filters": {
       "all": "Toate",
@@ -633,16 +331,9 @@
       "ready": "Gata",
       "launched": "Lansate"
     },
-    "compare": "Compară",
-    "compareHint": "Alege 2 campanii",
-    "compareCta": "Compară cele 2",
     "emptyTitle": "Nicio campanie aici încă",
     "emptySub": "Hai să facem prima. Durează 2 minute.",
     "noResults": "Nu am găsit nimic pentru căutarea asta.",
-    "compareTitle": "Comparație campanii",
-    "budget": "Buget",
-    "winnerScore": "Scor mesaj câștigător",
-    "channels": "Canale",
     "created": "Creată"
   },
   "status": {
@@ -653,9 +344,6 @@
   },
   "assets": {
     "title": "Vizuale",
-    "sub": "Imaginile campaniilor tale. Posterele și videourile vin în curând.",
-    "square": "Vizual 1080×1080",
-    "locked": "În curând",
     "emptyTitle": "Încă nu ai vizuale"
   },
   "settings": {
@@ -750,7 +438,7 @@
     "heroAccent": "Noi le dăm voce.",
     "heroBody": "De la „ce să postez azi?” la o campanie completă, cu mesaje, publicuri și un plan clar.",
     "candleAlt": "Lumânare artizanală, exemplu de produs pentru o campanie",
-    "winner": "MESAJUL TĂU CÂȘTIGĂTOR",
+    "winner": "MESAJUL TĂU PRINCIPAL",
     "demoMessage1": "Un pic de liniște.",
     "demoMessage2": "Aprinsă de tine.",
     "ready": "Gata de postat",
@@ -786,44 +474,11 @@
     "verificationDemo": "Verifică-ți contul pentru {email}."
   },
   "campaignCopy": {
-    "back": "Înapoi la campanii",
-    "report": "Planul tău de marketing",
     "ready": "Gata să faci lucrurile să se întâmple.",
-    "sub": "Un public potrivit. Un mesaj mai bun. Un plan pe care îl poți începe azi.",
-    "simulated": "Exemplu cu date simulate",
-    "sections": "În campania ta",
-    "expand": "Extinde secțiunea",
-    "collapse": "Restrânge secțiunea",
     "days": "zile",
-    "audienceHint": "Începe cu oamenii care au un motiv să aleagă produsul tău.",
-    "messageHint": "Păstrează aceeași idee, indiferent unde o spui.",
-    "scoresHint": "Trei abordări, un panel simulat. Scorul compară mesajele, nu promite vânzări.",
-    "panelReactions": "Reacții din panelul simulat",
-    "years": "ani",
-    "objections": "Obiecții de rezolvat",
-    "agentHint": "Mesajul tău primește o a doua șansă, înainte de primul leu cheltuit.",
-    "budgetHint": "Fiecare canal are un rol. Începe cu prima acțiune și construiește de acolo.",
-    "totalBudget": "Buget total",
-    "noBudget": "Fără buget plătit",
-    "copyHint": "Făcute pentru produsul tău. Mai citește-le o dată, apoi publică.",
     "content": "Conținut",
-    "visual": "Cadru",
-    "voice": "Voce / text",
-    "downloadHint": "Imagine PNG · 1080 × 1080 px · pregătită pentru postare",
-    "downloading": "Pregătim imaginea…",
-    "downloadFailed": "Imaginea nu a putut fi descărcată. Verifică poza produsului și încearcă din nou.",
-    "downloadDone": "Vizual descărcat.",
-    "noImage": "Produsul tău, în prim-plan.",
-    "futureAssets": "Mai mult spațiu pentru ideile tale.",
-    "shareTitle": "Linkul campaniei este gata",
-    "shareNote": "Link doar pentru citire, cu o copie a campaniei, fără fotografia încărcată. Modificările viitoare nu actualizează această copie.",
-    "sharePrivate": "Distribuie-l doar persoanelor cu care vrei să împarți detaliile campaniei.",
-    "shareCopy": "Copiază linkul",
-    "shareError": "Nu am putut pregăti linkul. Încearcă din nou.",
     "invalidShare": "Acest link nu conține o campanie validă.",
     "backHome": "Înapoi la Campio",
-    "edit": "Editează rezultatele",
-    "launched": "Campania e marcată ca lansată. Poți adăuga acum rezultatele.",
     "error": "Nu am reușit să salvăm. Încearcă din nou.",
     "retry": "Încearcă din nou",
     "saved": "Salvat în contul tău.",
@@ -836,9 +491,7 @@
     "noOrders": "Fără comenzi",
     "delta": "față de țintă",
     "estimate": "Țintă orientativă",
-    "savedResults": "Rezultate salvate",
-    "perCampaign": "pentru această campanie",
-    "copies": "Texte gata scrise"
+    "savedResults": "Rezultate salvate"
   },
   "settingsCopy": {
     "currentPasswordError": "Introdu parola actuală.",
@@ -905,57 +558,8 @@
     "colorLabel": "Culoarea {index} a brandului",
     "connected": "Conectat"
   },
-  "wizardCopy": {
-    "eyebrow": "O idee bună merită o campanie bună.",
-    "saved": "Progres salvat pe acest dispozitiv",
-    "demo": "Mod demonstrativ · analiza și integrările sunt simulate",
-    "example": "Încearcă un exemplu",
-    "exampleText": "Vând lumânări din ceară de soia, turnate manual, cu parfum de pin. Ard 45 de ore și costă 89 lei. Pentru iubitorii serilor cozy și cadourilor deosebite.",
-    "manual": "Prefer să completez manual",
-    "startAgain": "Începe de la zero",
-    "info": "Tu cunoști produsul. Noi punem ideile în ordine.",
-    "photoError": "Alege o imagine JPG, PNG sau WebP de cel mult 2 MB.",
-    "photoRemove": "Elimină poza",
-    "aiHint": "Analiză AI. Verifică informațiile înainte să continui.",
-    "strengthHint": "Separă punctele forte prin virgulă",
-    "marketplaceHint": "Poți selecta mai multe platforme.",
-    "preview": "Previzualizare campanie",
-    "noPhoto": "Poza produsului tău apare aici",
-    "noPrice": "Preț necompletat",
-    "product": "Produsul tău",
-    "channels": "Platforme",
-    "productEmpty": "Numele produsului",
-    "descriptionEmpty": "Povestea produsului începe cu tine.",
-    "deliverables": "9 livrabile. O direcție clară.",
-    "deliverablesHint": "Publicuri, mesaje testate, plan de buget, texte și un vizual gata de folosit.",
-    "edit": "Poți reveni la orice pas pentru modificări.",
-    "generateHint": "Fără publicare automată. Tu alegi când lansezi campania.",
-    "simulationConnect": "Conexiune demo salvată. Niciun cont extern nu a fost conectat.",
-    "simulationDisconnect": "Conexiune demo eliminată.",
-    "summaryNote": "Campania ta, pe scurt",
-    "missingDescription": "Adaugă o descriere scurtă a produsului.",
-    "invalidBudget": "Alege un buget între 50 și 20.000 lei.",
-    "invalidLink": "Introdu un link complet, care începe cu https://.",
-    "parseError": "Descrie produsul în cel puțin 10 caractere.",
-    "error": "Nu am reușit să salvăm. Mai încearcă o dată.",
-    "ready": "Totul e pregătit",
-    "generationStep": "Pasul {n} din 5",
-    "generationSub": "Tu ai ideea. Noi îi găsim cuvintele potrivite.",
-    "generationNote": "Conținut generat cu AI · reacțiile panelului și scorurile sunt simulate",
-    "generationError": "Generarea nu s-a putut încărca.",
-    "missingCampaign": "Campania nu există sau nu mai este disponibilă.",
-    "back": "Înapoi la campanii",
-    "finished": "9 livrabile, gata să prindă viață.",
-    "waiting": "Se pregătește",
-    "inProgress": "În lucru",
-    "completed": "Finalizat",
-    "message": "Mesaj",
-    "live": "LIVE"
-  },
   "extra": {
     "languageLabel": "Limba interfeței",
-    "campaignLanguage": "Limba campaniei",
-    "campaignLanguageHint": "Aceasta controlează conținutul generat separat de limba aplicației. Româna este sugerată pentru eMAG, Trendyol și OLX.",
     "languageEnglish": "English",
     "languageRomanian": "Română",
     "notFoundTitle": "404 · Pagina nu există",
@@ -973,9 +577,6 @@
     "currencyRON": "RON · Lei",
     "currencyEUR": "EUR · Euro",
     "currencyUSD": "USD · Dolari",
-    "strengthPlaceholder": "Lucrat manual, ingrediente naturale",
-    "minimumBudget": "50 lei",
-    "maximumBudget": "20.000 lei",
     "countryRomania": "România",
     "loadingCampaign": "Se încarcă campania",
     "loadingResults": "Se încarcă rezultatele",
@@ -983,7 +584,6 @@
     "loading": "Se încarcă…",
     "verificationCode": "Cod de verificare",
     "digit": "Cifra",
-    "campaignHealth": "Sănătate campanie",
     "progress": "Progres",
     "calculated": "Calculat",
     "ai": "AI",
@@ -1003,16 +603,6 @@
     "toggleSidebar": "Comută meniul lateral",
     "carousel": "Carusel",
     "slide": "Diapozitiv",
-    "previewUrl": "campio.app/app/campaigns/lumanare",
-    "messageB": "Mesaj B",
-    "messageC": "Mesaj C",
-    "budget": "Buget",
-    "budget500": "500 lei",
-    "previewMessage": "Seara ta liniștită începe cu o flacără curată.",
-    "orderNow": "Comandă acum",
-    "round2": "Runda 2",
-    "previewPerson": "Ioana, 31",
-    "previewQuote": "„Exact vibe-ul pe care îl caut după o zi lungă.”",
     "candleAlt": "Lumânare artizanală River & Pine pe o masă, lângă crenguțe de pin",
     "faq": "Întrebări frecvente",
     "homeLabel": "Campio, acasă",
@@ -1041,42 +631,23 @@
     "brandName": "Campio",
     "previewBrand": "RIVER & PINE",
     "previewHandle": "riverandpine.studio",
-    "previewEtsy": "Etsy",
-    "previewTrendyol": "trendyol",
-    "previewShopify": "shopify",
-    "previewInstagram": "Instagram",
-    "moreInformation": "Mai avem nevoie de câteva detalii",
-    "assetFailed": "Generarea materialului a eșuat. Încearcă din nou.",
     "download": "Descarcă",
-    "mediaEmpty": "Materialele generate vor apărea aici.",
     "totpTitle": "Securitatea autentificatorului",
     "totpDisableHint": "Introdu codul actual din autentificator pentru a dezactiva verificarea în doi pași.",
     "totpSetupHint": "Adaugă cheia de configurare în aplicația de autentificare, apoi introdu codul actual.",
     "openAuthenticator": "Deschide aplicația de autentificare",
     "totpCode": "Cod din autentificator",
     "logoPrefix": "campi",
-    "logoEnd": "o",
-    "previewPricePlatform": "89 lei · Etsy",
-    "versus39": "vs 39",
-    "previewInitial": "I",
-    "previewCost": "≈ $0.01 / campanie",
-    "scoreMaximum": "/ 100",
     "secondsShort": "s",
     "currencyPer": "lei /",
     "sharePath": "/share/",
-    "orderArrow": "Comandă acum  →",
     "previewMonogram": "r&p",
-    "previewEmag": "eMAG",
-    "previewAmazon": "amazon",
     "campioDot": "Campio.",
     "photoSize": "· Max. 2 MB",
     "currencyRONShort": "RON",
     "days": "zile",
-    "png": "· PNG",
-    "score": "Scor",
     "socialIcons": "♡ ↗",
-    "ogTagline": "Un produs. O campanie. ↗",
-    "currency89": "89"
+    "ogTagline": "Un produs. O campanie. ↗"
   },
   "errors": {
     "invalid_request": "Verifică datele introduse și încearcă din nou.",
@@ -1120,5 +691,24 @@
     "reset_expired": "Acest link este invalid sau a expirat. Cere unul nou.",
     "already_enabled": "Verificarea în doi pași este deja activată.",
     "unknown_error": "Ceva n-a mers. Încearcă din nou."
+  },
+  "landingKit": {
+    "median": "Median eMAG",
+    "yourPrice": "Prețul tău",
+    "example": "Exemplu: suport laptop din aluminiu",
+    "channels": "Buget pe canal",
+    "orders": "comenzi est.",
+    "clicks": "click-uri",
+    "computed": "Calculat din benchmark-uri fixe",
+    "persona": "Persona",
+    "personaName": "Andrei, programator remote",
+    "personaHook": "Gâtul tău îți va mulțumi.",
+    "complaint": "Nemulțumirea concurenței",
+    "complaintText": "„Instabil, fără deschidere mare”",
+    "message": "Mesajul nostru",
+    "messageText": "Nu se clatină. Niciodată.",
+    "cost": "Costul kitului: 1,03 lei",
+    "trend": "Google Trends · 5 ani",
+    "reel": "Reel montat de AI"
   }
 }

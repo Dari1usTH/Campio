@@ -86,31 +86,25 @@ def run_width(browser, width):
         page.wait_for_url(re.compile(r'/app/?$'))
         expect(page.locator('html')).to_have_attribute('lang', 'en')
 
-        # Wizard -> backend parse -> server generation/polling -> real report.
+        # Prompt (+ optional photos) -> server generation/polling -> kit rendered from the Kit contract.
         page.goto(BASE + '/app/new')
-        page.locator('#product-description').fill(
+        page.locator('#prompt').fill(
             'Hand poured soy candle with pine fragrance, burns 45 hours, 89 RON, for thoughtful gifts.')
-        page.get_by_role('button', name=t['wizard']['analyze'], exact=True).click()
-        expect(page.locator('#product-name')).not_to_have_value('')
-        page.locator('#product-name').fill('Smoke soy candle ' + str(width))
-        page.locator('#product-price').fill('89')
-        page.get_by_role('button', name=t['common']['continue'], exact=True).click()
-        page.get_by_role('button', name=re.compile(r'^Etsy')).click()
-        page.get_by_role('button', name=t['common']['continue'], exact=True).click()
-        page.locator('#campaign-budget').fill('500')
-        page.locator('#campaign-language').select_option('en')
-        page.get_by_role('button', name=t['common']['continue'], exact=True).click()
-        page.get_by_role('button', name=t['wizard']['generate'], exact=True).click()
-        page.wait_for_url(re.compile(r'/app/generating/[^/?]+'), timeout=20000)
-        page.wait_for_url(re.compile(r'/app/campaigns/[^/?]+$'), timeout=60000)
+        page.locator('form button[type=submit]').click()
+        page.wait_for_url(re.compile(r'/app/campaigns/[^/?#]+$'), timeout=20000)
         campaign_id = page.url.rsplit('/', 1)[1]
-        expect(page.locator('h1')).to_contain_text('Smoke soy candle')
+        # MOCK_AI names the product itself; the header shows what the intake understood.
+        expect(page.locator('h1')).to_contain_text('Soy candle', timeout=60000)
+        page.get_by_role('tab', name=re.compile(r'^Content')).click()
         page.get_by_role('button', name=t['common']['copy'], exact=True).first.click()
         page.wait_for_function('navigator.clipboard.readText().then(text => text.length > 0)')
+        # Nothing from the old invented UI (scores, warnings, posters) may come back.
+        for gone in ['/ 100', 'Poster', 'Warnings']:
+            expect(page.get_by_text(gone)).to_have_count(0)
         page.screenshot(path=str(REPORT / f'report-{width}.png'), full_page=True)
 
         page.goto(BASE + '/app/campaigns')
-        expect(page.get_by_text('Smoke soy candle ' + str(width), exact=True).first).to_be_visible()
+        expect(page.get_by_text('Soy candle', exact=True).first).to_be_visible()
         page.goto(BASE + '/app/campaigns/' + campaign_id + '/results')
         values = {'spent': '120', 'impressions': '8000', 'clicks': '240', 'orders': '12', 'revenue': '1068'}
         for key, value in values.items():

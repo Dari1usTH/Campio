@@ -28,8 +28,6 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Surface, Eyebrow } from "@/components/campio/Surface";
 import { Chip } from "@/components/campio/Chip";
-import { ScoreGauge } from "@/components/campio/ScoreGauge";
-import { SmileyTrio } from "@/components/campio/Illustrations";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +41,9 @@ import { useSession } from "@/hooks/use-session";
 export default function LandingPage() {
   const t = useT();
   const session = useSession();
-  const [legal, setLegal] = useState<"terms" | "privacy" | "about" | null>(null);
+  const [legal, setLegal] = useState<"terms" | "privacy" | "about" | null>(
+    null,
+  );
   const destination = session ? "/app/new" : "/signup";
   const icons = [
     Users,
@@ -133,7 +133,10 @@ export default function LandingPage() {
                       stroke="currentColor"
                       strokeWidth="1.4"
                     >
-                      <path d="M7 9h1m8 0h1M7 15q5 5 10 0" strokeLinecap="round" />
+                      <path
+                        d="M7 9h1m8 0h1M7 15q5 5 10 0"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </span>
                 ))}
@@ -162,8 +165,11 @@ export default function LandingPage() {
               <div className="flex items-center justify-between px-2 py-2">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-full bg-navy text-[10px] text-cream">
-                    {tr("extra.previewMonogram")}</span>
-                  <span className="text-[10px] font-semibold">{tr("extra.previewHandle")}</span>
+                    {tr("extra.previewMonogram")}
+                  </span>
+                  <span className="text-[10px] font-semibold">
+                    {tr("extra.previewHandle")}
+                  </span>
                 </div>
                 <Instagram className="size-4" />
               </div>
@@ -178,11 +184,15 @@ export default function LandingPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-5 bottom-5 text-cream-soft">
-                  <span className="text-[8px] font-medium tracking-[.2em]">{tr("extra.previewBrand")}</span>
+                  <span className="text-[8px] font-medium tracking-[.2em]">
+                    {tr("extra.previewBrand")}
+                  </span>
                   <p className="mt-2 font-display text-[26px] font-semibold leading-none sm:text-[34px]">
                     {t.workspace.previewMessage}
                   </p>
-                  <p className="mt-3 text-[8px] sm:text-[10px]">{t.workspace.previewNote}</p>
+                  <p className="mt-3 text-[8px] sm:text-[10px]">
+                    {t.workspace.previewNote}
+                  </p>
                 </div>
               </div>
               <div className="flex justify-between px-2 pt-4 text-[9px] text-muted-foreground">
@@ -193,14 +203,26 @@ export default function LandingPage() {
             <div className="absolute -right-1 top-[43%] w-[45%] rotate-[7deg] rounded-3xl border border-border/40 bg-card p-4 shadow-float sm:right-0 sm:top-[42%]">
               <span className="flex items-center gap-1.5 text-[9px] font-semibold text-muted-foreground">
                 <Trophy className="size-3.5 text-coral-ink" />
-                {t.result.winner}
-              </span>
-              <div className="mx-auto mt-2 w-fit">
-                <ScoreGauge value={64} size={125} highlight />
-              </div>
-              <p className="-mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
                 {t.workspace.tested}
+              </span>
+              <p className="mt-3 font-display text-3xl font-bold">79 lei</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t.landingKit.median}: 71 lei ·{" "}
+                <b className="text-foreground">+11%</b>
               </p>
+              <div className="mt-3 flex h-12 items-end gap-1">
+                {[12, 16, 11, 9, 6, 4].map((v, i) => (
+                  <span
+                    key={i}
+                    className={
+                      i === 2
+                        ? "flex-1 rounded-t bg-coral"
+                        : "flex-1 rounded-t bg-navy/80 dark:bg-cream/60"
+                    }
+                    style={{ height: `${(v / 16) * 100}%` }}
+                  />
+                ))}
+              </div>
             </div>
             <div className="absolute -bottom-1 left-0 flex max-w-[90%] -rotate-3 items-center gap-3 rounded-2xl bg-navy px-5 py-4 text-cream-soft shadow-float sm:bottom-4 sm:left-2">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-coral text-navy">
@@ -211,7 +233,9 @@ export default function LandingPage() {
                   {t.workspace.previewReady}
                   <Sparkles className="ml-2 inline size-3.5 text-coral" />
                 </p>
-                <p className="mt-1 text-[10px] text-cream/70">{t.workspace.previewReadySub}</p>
+                <p className="mt-1 text-[10px] text-cream/70">
+                  {t.workspace.previewReadySub}
+                </p>
               </div>
             </div>
           </div>
@@ -221,16 +245,14 @@ export default function LandingPage() {
             {t.workspace.platforms}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-display text-lg font-bold tracking-tight text-foreground/65 sm:gap-x-12 sm:text-2xl">
-            <span>
-              {tr("extra.previewEmag")}<span className="text-coral">.</span>
-            </span>
-            <span className="font-serif font-medium">{tr("wizard.marketplaces.etsy.name")}</span>
-            <span>{tr("extra.previewTrendyol")}</span>
-            <span className="font-medium">
-              {tr("extra.previewAmazon")}<span className="text-coral">⌣</span>
-            </span>
-            <span className="italic">{tr("extra.previewShopify")}</span>
-            <span className="font-normal">{tr("result.tabs.instagram")}</span>
+            {["eMAG", "Google Trends", "Amazon.de", "Reddit", "BetaList"].map(
+              (name) => (
+                <span key={name}>
+                  {name}
+                  <span className="text-coral">.</span>
+                </span>
+              ),
+            )}
           </div>
         </section>
         <section
@@ -279,7 +301,10 @@ export default function LandingPage() {
             ))}
           </div>
         </section>
-        <section id="ce-primesti" className="scroll-mt-28 bg-surface py-20 md:py-28">
+        <section
+          id="ce-primesti"
+          className="scroll-mt-28 bg-surface py-20 md:py-28"
+        >
           <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
             <div className="max-w-2xl">
               <Eyebrow>{t.workspace.bentoEyebrow}</Eyebrow>
@@ -358,26 +383,38 @@ export default function LandingPage() {
             </Button>
           </div>
           <div className="rounded-[2rem] border border-border bg-surface p-6 md:p-8">
-            <SmileyTrio className="mx-auto max-w-[280px]" />
-            <div className="mt-4 rounded-3xl bg-card p-5 shadow-soft">
-              <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-full bg-coral-tint font-display text-lg">
-                  {tr("extra.previewInitial")}</span>
-                <div>
-                  <p className="text-sm font-semibold">{tr("extra.previewPerson")}</p>
-                  <p className="mt-0.5 text-[9px] tracking-wider text-muted-foreground">
-                    {t.workspace.panelLabel}
-                  </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {t.landingKit.channels}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t.landingKit.example}
+            </p>
+            <div className="mt-5 space-y-3 rounded-3xl bg-card p-5 shadow-soft">
+              {[
+                ["Meta", 41, 818, 682, 8.2],
+                ["eMAG Ads", 34, 682, 545, 9.3],
+                ["TikTok", 25, 500, 259, 4.8],
+              ].map(([name, pct, budget, clicks, orders]) => (
+                <div key={name as string}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{name}</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {budget} lei · {clicks} {t.landingKit.clicks} · {orders}{" "}
+                      {t.landingKit.orders}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full bg-coral"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
-                <Chip variant="success" size="sm" className="ml-auto">
-                  +64
-                </Chip>
-              </div>
-              <blockquote className="mt-4 text-base font-medium leading-relaxed">
-                „{t.workspace.panelQuote}”
-              </blockquote>
+              ))}
             </div>
-            <p className="mt-4 text-center text-[10px] text-muted-foreground">{t.result.formula}</p>
+            <p className="mt-4 text-center text-[10px] text-muted-foreground">
+              {t.landingKit.computed}
+            </p>
           </div>
         </section>
         <section
@@ -393,7 +430,9 @@ export default function LandingPage() {
               <p className="mt-5 max-w-sm text-sm leading-relaxed text-cream/70">
                 {t.landing.priceNote}
               </p>
-              <p className="mt-5 max-w-sm text-[11px] text-cream/60">{t.workspace.costEstimate}</p>
+              <p className="mt-5 max-w-sm text-[11px] text-cream/60">
+                {t.workspace.costEstimate}
+              </p>
             </div>
             <div className="space-y-3">
               <div className="rounded-3xl bg-coral p-6 text-navy">
@@ -409,7 +448,9 @@ export default function LandingPage() {
               <div className="flex flex-wrap justify-between gap-3 rounded-3xl border border-cream/15 px-6 py-5">
                 <div>
                   <p className="text-sm">{t.landing.priceThem}</p>
-                  <p className="mt-1 text-[10px] text-cream/55">{t.workspace.agencyLabel}</p>
+                  <p className="mt-1 text-[10px] text-cream/55">
+                    {t.workspace.agencyLabel}
+                  </p>
                 </div>
                 <p className="text-lg font-semibold">
                   {t.landing.priceThemValue}
@@ -436,13 +477,18 @@ export default function LandingPage() {
           </div>
           <div>
             {t.landing.faq.map((item) => (
-              <details key={item.q} className="group border-b border-border py-1">
+              <details
+                key={item.q}
+                className="group border-b border-border py-1"
+              >
                 <summary className="flex min-h-18 cursor-pointer list-none items-center justify-between gap-5 py-5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
                   {item.q}
                   <Plus className="size-4 shrink-0 group-open:hidden" />
                   <Minus className="hidden size-4 shrink-0 group-open:block" />
                 </summary>
-                <p className="pb-6 pr-5 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+                <p className="pb-6 pr-5 text-sm leading-relaxed text-muted-foreground">
+                  {item.a}
+                </p>
               </details>
             ))}
           </div>
@@ -464,7 +510,9 @@ export default function LandingPage() {
               <ArrowUpRight />
             </Link>
           </Button>
-          <p className="mt-5 text-xs text-muted-foreground">{t.landing.heroNote}</p>
+          <p className="mt-5 text-xs text-muted-foreground">
+            {t.landing.heroNote}
+          </p>
         </section>
       </main>
       <footer className="mx-auto max-w-[1200px] px-5 pb-7 pt-14 sm:px-8">
@@ -480,7 +528,10 @@ export default function LandingPage() {
           <div className="flex flex-wrap gap-x-12 gap-y-6 text-xs">
             <div className="space-y-3">
               <p className="font-semibold">{t.landing.footerProduct}</p>
-              <a href="#cum-functioneaza" className="block text-muted-foreground">
+              <a
+                href="#cum-functioneaza"
+                className="block text-muted-foreground"
+              >
                 {t.landing.navHow}
               </a>
               <Link to="/app" className="block text-muted-foreground">
@@ -498,7 +549,10 @@ export default function LandingPage() {
               >
                 {t.landing.footerLinks.about}
               </button>
-              <a href="#intrebari" className="block min-h-6 text-muted-foreground">
+              <a
+                href="#intrebari"
+                className="block min-h-6 text-muted-foreground"
+              >
                 {t.landing.navFaq}
               </a>
             </div>
@@ -531,7 +585,8 @@ export default function LandingPage() {
         </div>
         <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-6 text-[10px] text-muted-foreground">
           <span>
-            © {new Date().getFullYear()} {tr("extra.campioDot")}{t.landing.rights}
+            © {new Date().getFullYear()} {tr("extra.campioDot")}
+            {t.landing.rights}
           </span>
           <span>{t.brand.tagline}</span>
         </div>
@@ -547,7 +602,9 @@ export default function LandingPage() {
                   : t.workspace.privacyTitle}
             </DialogTitle>
             <DialogDescription className="pt-4 leading-relaxed">
-              {legal === "about" ? t.workspace.aboutBody : t.workspace.legalDemo}
+              {legal === "about"
+                ? t.workspace.aboutBody
+                : t.workspace.legalDemo}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

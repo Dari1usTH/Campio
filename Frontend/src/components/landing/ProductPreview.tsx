@@ -1,90 +1,146 @@
-import { tr } from "@/i18n";
-import candle from "@/assets/candle.jpg";
-import { Chip } from "@/components/campio/Chip";
-import { ScoreGauge } from "@/components/campio/ScoreGauge";
-import { PlatformIcon } from "@/components/campio/PlatformIcon";
-import { Trophy, MessageCircle, Wallet } from "lucide-react";
+import { useT } from "@/i18n";
+import { Clapperboard, Quote, Wallet } from "lucide-react";
 
-/** Animated hero preview: laptop + phone frames with floating campaign cards. */
+/** Static illustration of a kit, using the documented demo case (aluminium laptop stand). */
+const HISTOGRAM = [12, 16, 11, 9, 6, 4, 2];
+const TREND = [40, 44, 38, 52, 47, 41, 39, 45, 54, 63];
+const CHANNELS = [
+  { name: "Meta", pct: 41, color: "bg-coral" },
+  { name: "eMAG Ads", pct: 34, color: "bg-peach" },
+  { name: "TikTok", pct: 25, color: "bg-navy-foreground/40" },
+];
+
 export function ProductPreview() {
+  const t = useT();
+  const k = t.landingKit;
+  const max = Math.max(...HISTOGRAM);
+  const points = TREND.map(
+    (v, i) => `${(i / (TREND.length - 1)) * 100},${40 - (v / 70) * 40}`,
+  ).join(" ");
   return (
-    <div className="relative mx-auto mt-14 w-full max-w-5xl md:mt-20" aria-hidden="true">
-      {/* Laptop */}
+    <div
+      className="relative mx-auto mt-14 w-full max-w-5xl md:mt-20"
+      aria-hidden="true"
+    >
       <div className="relative mx-auto w-[92%] animate-rise rounded-[1.75rem] bg-navy p-2.5 shadow-float md:w-[78%] md:p-3">
         <div className="overflow-hidden rounded-[1.25rem] bg-background">
           <div className="flex items-center gap-1.5 border-b border-border px-4 py-2.5">
             <span className="size-2.5 rounded-full bg-coral" />
             <span className="size-2.5 rounded-full bg-peach" />
             <span className="size-2.5 rounded-full bg-muted" />
-            <span className="ml-3 truncate text-[11px] text-muted-foreground">{tr("extra.previewUrl")}</span>
+            <span className="ml-3 truncate text-[11px] text-muted-foreground">
+              {k.example}
+            </span>
           </div>
           <div className="grid gap-3 p-3 sm:grid-cols-3 md:gap-4 md:p-5">
             <div className="rounded-3xl bg-card p-4 shadow-soft sm:col-span-2">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{tr("landing.bento.2.t")}</p>
-              <div className="mt-2 flex items-end justify-around gap-2">
-                <div className="flex flex-col items-center">
-                  <ScoreGauge value={64} size={96} highlight />
-                  <Chip variant="coral" size="sm" className="mt-1">{tr("result.winner")}</Chip>
-                </div>
-                <div className="hidden flex-col items-center opacity-80 sm:flex">
-                  <ScoreGauge value={39} size={78} />
-                  <span className="mt-1 text-[11px] text-muted-foreground">{tr("extra.messageB")}</span>
-                </div>
-                <div className="hidden flex-col items-center opacity-70 md:flex">
-                  <ScoreGauge value={34} size={78} />
-                  <span className="mt-1 text-[11px] text-muted-foreground">{tr("extra.messageC")}</span>
-                </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {k.median}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {k.yourPrice}: <b className="text-foreground">79 lei</b>{" "}
+                  (+11%)
+                </p>
+              </div>
+              <p className="font-display text-3xl font-bold">71 lei</p>
+              <div className="mt-3 flex h-20 items-end gap-1.5">
+                {HISTOGRAM.map((v, i) => (
+                  <span
+                    key={i}
+                    className={`flex-1 rounded-t-md ${i === 2 ? "bg-coral" : "bg-navy dark:bg-cream/70"}`}
+                    style={{ height: `${(v / max) * 100}%` }}
+                  />
+                ))}
               </div>
             </div>
-            <div className="hidden flex-col justify-between rounded-3xl bg-gradient-navy p-4 text-navy-foreground sm:flex">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-navy-foreground/70">{tr("campaigns.budget")}</p>
-              <p className="font-display text-3xl font-bold">{tr("extra.budget500")}</p>
+            <div className="hidden flex-col justify-between gap-3 rounded-3xl bg-gradient-navy p-4 text-navy-foreground sm:flex">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-navy-foreground/70">
+                {k.channels}
+              </p>
+              <p className="font-display text-3xl font-bold">2.000 lei</p>
               <div className="flex h-2 overflow-hidden rounded-full">
-                <span className="w-[50%] bg-coral" />
-                <span className="w-[30%] bg-peach" />
-                <span className="w-[20%] bg-navy-foreground/40" />
+                {CHANNELS.map((c) => (
+                  <span
+                    key={c.name}
+                    className={c.color}
+                    style={{ width: `${c.pct}%` }}
+                  />
+                ))}
               </div>
+              <p className="text-[10px] text-navy-foreground/70">
+                ≈ 22 {k.orders} · 1.486 {k.clicks}
+              </p>
+            </div>
+            <div className="rounded-3xl bg-card p-4 shadow-soft">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {k.trend}
+              </p>
+              <svg
+                viewBox="0 0 100 40"
+                className="mt-2 h-14 w-full"
+                preserveAspectRatio="none"
+              >
+                <polyline
+                  points={points}
+                  fill="none"
+                  stroke="var(--coral)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+            <div className="rounded-3xl bg-coral-tint p-4 sm:col-span-2">
+              <p className="text-[11px] font-semibold text-muted-foreground">
+                {k.complaint}
+              </p>
+              <p className="mt-1 flex gap-2 text-sm italic">
+                <Quote className="mt-0.5 size-3.5 shrink-0" />
+                {k.complaintText}
+              </p>
+              <p className="mt-3 text-[11px] font-semibold text-muted-foreground">
+                {k.message}
+              </p>
+              <p className="font-display text-lg font-bold">{k.messageText}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Phone */}
-      <div className="absolute -bottom-10 right-0 w-[38%] max-w-[230px] animate-float rounded-[2.2rem] bg-navy p-2 shadow-float [--r:4deg] sm:right-[2%] md:-bottom-14">
+      <div className="absolute -bottom-10 right-0 w-[34%] max-w-[200px] animate-float rounded-[2.2rem] bg-navy p-2 shadow-float [--r:4deg] sm:right-[2%] md:-bottom-14">
         <div className="overflow-hidden rounded-[1.8rem] bg-background">
           <div className="mx-auto mt-2 h-4 w-16 rounded-full bg-navy" />
           <div className="p-2.5">
-            <div className="relative overflow-hidden rounded-2xl">
-              <img src={candle} alt="" width={1024} height={1024} className="aspect-square w-full object-cover" />
-              <div className="absolute inset-x-2 bottom-2 rounded-xl bg-navy/85 p-2 text-navy-foreground backdrop-blur">
-                <p className="text-[9px] font-semibold leading-tight sm:text-[11px]">{tr("extra.previewMessage")}</p>
-                <span className="mt-1 inline-block rounded-full bg-coral px-2 py-0.5 text-[8px] font-bold text-coral-foreground sm:text-[10px]">{tr("result.order")}</span>
+            <div className="grid aspect-[9/14] place-items-center rounded-2xl bg-gradient-navy text-navy-foreground">
+              <div className="grid justify-items-center gap-2 px-2 text-center">
+                <Clapperboard className="size-7 text-coral" />
+                <p className="font-display text-sm font-bold leading-tight">
+                  {k.messageText}
+                </p>
+                <span className="rounded-full bg-coral px-2 py-0.5 text-[10px] font-bold text-coral-foreground">
+                  79 lei
+                </span>
               </div>
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <PlatformIcon platform="instagram" className="size-3" /> {tr("extra.previewPricePlatform")}</div>
+            <p className="mt-2 text-center text-[10px] text-muted-foreground">
+              {k.reel}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Floating chips */}
-      <div className="absolute -left-1 top-6 hidden animate-float-slow rounded-2xl bg-card p-3 shadow-lift [--r:-4deg] sm:flex sm:items-center sm:gap-3 md:-left-6">
-        <span className="grid size-9 place-items-center rounded-xl bg-coral text-coral-foreground"><Trophy className="size-4" /></span>
-        <div>
-          <p className="text-xs text-muted-foreground">{tr("extra.round2")}</p>
-          <p className="font-display text-lg font-bold leading-none">64 <span className="text-sm font-medium text-muted-foreground">{tr("extra.versus39")}</span></p>
-        </div>
-      </div>
       <div className="absolute -left-2 bottom-2 hidden max-w-[240px] animate-float rounded-2xl bg-card p-3 shadow-lift [--r:2deg] md:block">
-        <div className="flex items-center gap-2">
-          <span className="grid size-7 place-items-center rounded-full bg-peach text-xs font-bold text-navy">{tr("extra.previewInitial")}</span>
-          <p className="text-xs font-semibold">{tr("extra.previewPerson")}</p>
-          <MessageCircle className="ml-auto size-3.5 text-muted-foreground" />
-        </div>
-        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{tr("extra.previewQuote")}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {k.persona}
+        </p>
+        <p className="text-xs font-semibold">{k.personaName}</p>
+        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+          “{k.personaHook}”
+        </p>
       </div>
       <div className="absolute -top-6 right-[8%] hidden animate-float-slow items-center gap-2 rounded-full bg-coral px-4 py-2 font-semibold text-coral-foreground shadow-coral [--r:3deg] sm:flex">
-        <Wallet className="size-4" /> {tr("extra.previewCost")}</div>
+        <Wallet className="size-4" /> {k.cost}
+      </div>
     </div>
   );
 }

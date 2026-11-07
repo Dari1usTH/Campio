@@ -1,31 +1,56 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Image, LockKeyhole, Plus, Sparkles, Video } from "lucide-react";
+import {
+  ArrowUpRight,
+  Download,
+  Film,
+  Loader2,
+  Music,
+  Plus,
+} from "lucide-react";
 import { campaignsService } from "@/services/campaigns";
 import { campaignsQuery } from "@/services/queries";
-import { useT, tr } from "@/i18n";
-import { PageHeader, Surface } from "@/components/campio/Surface";
-import { SelectChip, Chip } from "@/components/campio/Chip";
+import { isAssetActive, type Asset } from "@/services/kit";
+import { useT, formatRelative } from "@/i18n";
+import { PageHeader } from "@/components/campio/Surface";
+import { SelectChip } from "@/components/campio/Chip";
 import { Button } from "@/components/ui/button";
 import { PageLoading, PageError } from "@/components/app/PageState";
 import { EmptyState } from "@/components/campio/Illustrations";
-import { VisualPreview, DownloadVisualButton } from "@/features/campaign/visual";
+import { useKitCopy } from "@/features/campaign/kit/copy";
+import { mediaUrl } from "@/features/campaign/kit/ui";
+
+type Tab = "edited" | "generated" | "upload";
+
 export default function AssetsPage() {
   const t = useT();
-  const query = useQuery(campaignsQuery());
-  const [tab, setTab] = useState("images");
-  const media = useQuery({queryKey:["media-assets",query.data?.map(c=>c.id).join(",")],enabled:!!query.data,queryFn:async()=>{const groups=await Promise.all((query.data??[]).map(c=>campaignsService.assets(c.id)));return groups.flat();},refetchInterval:query=>query.state.data?.some(a=>["pending","in_progress"].includes(a.status))?3000:false});
-  const tabs = [
-    { id: "images", label: t.workspace.images },
-    { id: "posters", label: t.workspace.posters },
-    { id: "videos", label: t.workspace.videos },
+  const c = useKitCopy();
+  const campaigns = useQuery(campaignsQuery());
+  const [tab, setTab] = useState<Tab>("edited");
+  const ids = campaigns.data?.map((x) => x.id) ?? [];
+  const media = useQuery({
+    queryKey: ["media-assets", ids.join(",")],
+    enabled: !!campaigns.data,
+    queryFn: async () =>
+      (await Promise.all(ids.map((id) => campaignsService.assets(id)))).flat(),
+    refetchInterval: (q) => (q.state.data?.some(isAssetActive) ? 5000 : false),
+  });
+  const names = new Map(
+    campaigns.data?.map((x) => [x.id, x.product_name || x.keyword]) ?? [],
+  );
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "edited", label: c.video.final },
+    { id: "generated", label: c.video.clips },
+    { id: "upload", label: c.video.uploads },
   ];
+  const items = (media.data ?? [])
+    .filter((a) => a.kind === tab)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   return (
     <div className="animate-rise">
       <PageHeader
         title={t.assets.title}
-        sub={t.workspace.assetsNote}
         actions={
           <Button asChild variant="coral">
             <Link to="/app/new">
@@ -35,7 +60,7 @@ export default function AssetsPage() {
           </Button>
         }
       />
-      <div className="mb-7 flex gap-2">
+      <div className="mb-7 flex flex-wrap gap-2">
         {tabs.map((item) => (
           <SelectChip
             key={item.id}
@@ -45,59 +70,104 @@ export default function AssetsPage() {
             size="lg"
           >
             {item.label}
-
           </SelectChip>
         ))}
       </div>
-      {query.isPending ? (
+      {campaigns.isPending || media.isPending ? (
         <PageLoading />
-      ) : query.isError ? (
-        <PageError retry={() => query.refetch()} />
-      ) : tab !== "images" ? (
-        media.isPending ? <PageLoading/> : media.isError ? <PageError retry={()=>media.refetch()}/> : <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">{media.data.filter(a=>tab==="videos"?a.mime.startsWith("video/"):a.mime.startsWith("image/")).map(asset=><article key={asset.id} className="rounded-[1.75rem] border border-border bg-card p-4 shadow-soft">{asset.status==="completed"?(asset.mime.startsWith("video/")?<video src={asset.content_url} controls className="aspect-square w-full rounded-2xl bg-navy"/>:<img src={asset.content_url} alt={asset.name} className="aspect-square w-full rounded-2xl object-contain"/>):<div className="grid aspect-square place-items-center rounded-2xl bg-background"><p>{asset.status==="failed"?tr("extra.assetFailed"):t.common.loading}</p></div>}<h2 className="mt-4 font-semibold">{asset.name}</h2>{asset.status==="completed"&&<a href={asset.content_url+"?download=1"} download={asset.name} className="mt-3 inline-flex min-h-11 items-center rounded-full bg-navy px-5 text-sm text-cream">{tr("extra.download")}</a>}</article>)}{!media.data.some(a=>tab==="videos"?a.mime.startsWith("video/"):a.mime.startsWith("image/"))&&<EmptyState title={t.assets.emptyTitle} sub={tr("extra.mediaEmpty")}/>}</div>
-      ) : query.data.length === 0 ? (
-        <EmptyState
-          title={t.assets.emptyTitle}
-          sub={t.campaigns.emptySub}
-          action={
-            <Button asChild>
-              <Link to="/app/new">{t.common.createCampaign}</Link>
-            </Button>
-          }
+      ) : campaigns.isError || media.isError ? (
+        <PageError
+          retry={() => void campaigns.refetch().then(() => media.refetch())}
         />
+      ) : items.length === 0 ? (
+        <EmptyState title={t.assets.emptyTitle} />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 2xl:grid-cols-3">
-          {query.data
-            .filter((c) => c.status !== "generating")
-            .map((c) => (
-              <article
-                key={c.id}
-                className="min-w-0 rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft"
-              >
-                <div className="overflow-hidden rounded-[1.2rem]">
-                  <VisualPreview campaign={c} />
-                </div>
-                <div className="p-3">
-                  <div className="mb-1 flex items-center justify-between">
-                    <h2 className="font-display text-lg font-semibold">{c.product.name}</h2>
-                    <Link
-                      aria-label={`${t.workspace.viewCampaign}: ${c.product.name}`}
-                      to="/app/campaigns/$id"
-                      params={{ id: c.id }}
-                      className="grid size-10 place-items-center rounded-full hover:bg-secondary"
-                    >
-                      <ArrowUpRight className="size-4" />
-                    </Link>
-                  </div>
-                  <p className="mb-4 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <Image className="size-3" />
-                    {t.assets.square} {tr("extra.png")}</p>
-                  <DownloadVisualButton campaign={c} />
-                </div>
-              </article>
-            ))}
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {items.map((a) => (
+            <AssetCard
+              key={a.id}
+              asset={a}
+              campaign={names.get(a.campaign_id) ?? ""}
+            />
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+function AssetCard({ asset: a, campaign }: { asset: Asset; campaign: string }) {
+  const c = useKitCopy();
+  const url = mediaUrl(a.content_url);
+  const done = a.status === "completed";
+  return (
+    <article className="min-w-0 rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft">
+      <div className="grid aspect-[4/5] place-items-center overflow-hidden rounded-[1.2rem] bg-navy">
+        {!done ? (
+          <p className="flex items-center gap-2 p-4 text-center text-xs text-cream/80">
+            {isAssetActive(a) && <Loader2 className="size-4 animate-spin" />}
+            {a.status === "failed" ? c.video.failed : c.video.pending}
+          </p>
+        ) : a.mime.startsWith("video/") ? (
+          <video
+            src={url}
+            controls
+            playsInline
+            preload="metadata"
+            className="size-full object-contain"
+          />
+        ) : a.mime.startsWith("image/") ? (
+          <img
+            src={url}
+            alt={a.name}
+            loading="lazy"
+            className="size-full object-cover"
+          />
+        ) : a.mime.startsWith("audio/") ? (
+          <div className="grid w-full gap-3 p-4 justify-items-center">
+            <Music className="size-8 text-cream/70" />
+            <audio src={url} controls className="w-full" />
+          </div>
+        ) : (
+          <Film className="size-8 text-cream/70" />
+        )}
+      </div>
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="truncate font-semibold">
+              {a.meta.title || a.meta.caption || a.name}
+            </h2>
+            <p className="truncate text-xs text-muted-foreground">
+              {campaign}
+              {a.kind === "upload" &&
+                a.role &&
+                ` · ${c.video.roles[a.role] ?? a.role}`}
+              {a.kind === "generated" &&
+                a.meta.concept_id &&
+                ` · ${a.meta.concept_id} #${a.meta.shot_index + 1}`}
+              {a.created_at && ` · ${formatRelative(a.created_at)}`}
+            </p>
+          </div>
+          <Link
+            aria-label={campaign}
+            to="/app/campaigns/$id"
+            params={{ id: a.campaign_id }}
+            hash="video"
+            className="grid size-10 shrink-0 place-items-center rounded-full hover:bg-secondary"
+          >
+            <ArrowUpRight className="size-4" />
+          </Link>
+        </div>
+        {done && (
+          <Button asChild variant="outline" size="sm" className="mt-3 w-full">
+            <a href={mediaUrl(a.content_url, true)}>
+              <Download />
+              {c.video.download}
+            </a>
+          </Button>
+        )}
+      </div>
+    </article>
   );
 }

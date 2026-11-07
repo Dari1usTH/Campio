@@ -1,0 +1,465 @@
+{
+ "id": "ac4205ac-4929-4bc7-b425-de380b89a5cb",
+ "created_at": "2026-11-07T08:45:58Z",
+ "updated_at": "2026-11-07T08:46:40Z",
+ "status": "completed",
+ "step": "done",
+ "steps": [
+  {
+   "step": "intake",
+   "status": "completed",
+   "duration_ms": 3120
+  },
+  {
+   "step": "market",
+   "status": "completed",
+   "duration_ms": 4210
+  },
+  {
+   "step": "strategy",
+   "status": "completed",
+   "duration_ms": 18250
+  },
+  {
+   "step": "content",
+   "status": "completed",
+   "duration_ms": 26400
+  },
+  {
+   "step": "plan",
+   "status": "completed",
+   "duration_ms": 12100
+  }
+ ],
+ "input": {
+  "prompt": "Vreau să lansez pe eMAG un suport de laptop pliabil din aluminiu, marca Ergodesk, 6 trepte de înălțime, 280 g.",
+  "image_asset_ids": [
+   "5b0e7c1e-6a43-4c55-9a4e-1f0f7d2b9a11"
+  ],
+  "product_name": "Suport laptop reglabil din aluminiu",
+  "keyword": "suport laptop",
+  "keyword_en": "laptop stand",
+  "subreddits": [
+   "ergonomics",
+   "laptops"
+  ],
+  "product_description": "Suport pliabil din aluminiu pentru laptopuri 10-17 inch, 6 trepte de înălțime, bază lată cu silicon antiderapant, 280 g.",
+  "sale_price": 79,
+  "ad_budget_ron": 2000,
+  "brand_name": "Ergodesk"
+ },
+ "intake": {
+  "round": 1,
+  "questions": [],
+  "answers": [
+   {
+    "question_id": "q1_1",
+    "field": "sale_price",
+    "question": "La ce preț vrei să vinzi suportul?",
+    "value": "79",
+    "skipped": false,
+    "round": 0,
+    "at": "2026-11-07T08:45:30Z"
+   },
+   {
+    "question_id": "q1_2",
+    "field": "ad_budget_ron",
+    "question": "Cât vrei să cheltui pe reclame în primele 4 săptămâni?",
+    "value": "2000",
+    "skipped": false,
+    "round": 0,
+    "at": "2026-11-07T08:45:30Z"
+   }
+  ],
+  "assumptions": []
+ },
+ "market": {
+  "source": "live",
+  "fetched_at": "2026-11-07T08:12:39Z",
+  "stats": {
+   "competitor_count": 60,
+   "known_seller_count": 5,
+   "price_min": 12.03,
+   "price_p25": 45.67,
+   "price_median": 71.39,
+   "price_p75": 110.78,
+   "price_max": 228.69,
+   "price_avg": 83.89,
+   "avg_rating": 4.7,
+   "total_reviews": 3971,
+   "top3_review_share_pct": 21.18,
+   "est_market_units_month": 8272.92,
+   "top_sellers": [
+    {
+     "name": "PadForce StableDesk",
+     "product_count": 3,
+     "review_count": 675,
+     "review_share_pct": 17
+    }
+   ],
+   "price_histogram": [
+    {
+     "from": 12.03,
+     "to": 39.11,
+     "count": 12
+    },
+    {
+     "from": 39.11,
+     "to": 66.19,
+     "count": 16
+    }
+   ]
+  },
+  "reviews_analyzed": 80,
+  "price_vs_median_pct": 10.66,
+  "competitors": [
+   {
+    "id": "DP3CD3MBM",
+    "title": "Suport Laptop, ASKSA, SL-1, pliabil, aluminiu",
+    "url": "https://www.emag.ro/suport-laptop-asksa-sl-1-pliabil-aluminiu-argintiu-pana-la-15-6-inch-em007-si/pd/DP3CD3MBM/",
+    "seller": "Zoe Shop Impex",
+    "price": 12.03,
+    "rating": 4.44,
+    "review_count": 382,
+    "position": 1
+   }
+  ]
+ },
+ "trend": {
+  "source": "live",
+  "fetched_at": "2026-11-07T08:12:42Z",
+  "stats": {
+   "direction": "stable",
+   "yoy_change_pct": -6.67,
+   "last_12_month_avg": 37.96,
+   "prev_12_month_avg": 40.67,
+   "peak_month": "01",
+   "yearly": [
+    {
+     "year": 2025,
+     "value": 40.83
+    },
+    {
+     "year": 2026,
+     "value": 35.98
+    }
+   ]
+  },
+  "monthly": [
+   {
+    "month": "2026-10",
+    "value": 53.75
+   },
+   {
+    "month": "2026-11",
+    "value": 63
+   }
+  ]
+ },
+ "web": {
+  "source": "live",
+  "fetched_at": "2026-11-07T11:09:42Z",
+  "query": "laptop stand",
+  "subreddits": [
+   "ergonomics",
+   "laptops"
+  ],
+  "sources": [
+   {
+    "name": "amazon",
+    "status": "ok",
+    "items": 16
+   },
+   {
+    "name": "reddit",
+    "status": "ok",
+    "items": 50,
+    "note": "Căutarea a expirat în r/laptops."
+   },
+   {
+    "name": "betalist",
+    "status": "ok",
+    "items": 41
+   }
+  ],
+  "stats": {
+   "amazon": {
+    "product_count": 16,
+    "priced_count": 16,
+    "currency": "RON",
+    "price_min": 43.8,
+    "price_median": 88.96,
+    "price_max": 164.48,
+    "price_median_ron": 88.96,
+    "avg_rating": 4.61,
+    "total_reviews": 100554,
+    "sponsored_pct": 0,
+    "emag_vs_amazon_pct": -19.75
+   },
+   "reddit": {
+    "post_count": 25,
+    "comment_count": 25,
+    "total_score": 69,
+    "total_replies": 79,
+    "last_12_months": 50,
+    "last_12_months_pct": 100,
+    "first_date": "2026-03-29",
+    "last_date": "2026-10-29",
+    "subreddits": [
+     {
+      "name": "Ergonomics",
+      "posts": 25,
+      "comments": 25,
+      "score": 69
+     }
+    ]
+   },
+   "launches": {
+    "found": 41,
+    "relevant": 4
+   }
+  },
+  "amazon": [
+   {
+    "id": "B08G84P8ZX",
+    "title": "Laptop Stand, Notebook Stand, ABS + Silicone Laptop Stand",
+    "url": "https://www.amazon.de/dp/B08G84P8ZX",
+    "price": 54.75,
+    "currency": "RON",
+    "rating": 4.4,
+    "review_count": 17700,
+    "sponsored": false,
+    "position": 8
+   }
+  ],
+  "discussions": [
+   {
+    "id": "1v2193p",
+    "kind": "post",
+    "subreddit": "Ergonomics",
+    "title": "Stop buying expensive chairs to sit badly in a nicer seat",
+    "text": "I've talked to enough people dealing with desk-related pain over the years to notice the same pattern every time. Someone's in pain, they research chairs for we",
+    "url": "https://www.reddit.com/r/Ergonomics/comments/1v2193p/",
+    "score": 7,
+    "num_comments": 5,
+    "date": "2026-07-20"
+   }
+  ],
+  "launches": [
+   {
+    "id": "slidenjoy",
+    "name": "Slidenjoy",
+    "tagline": "World's first accessory tripling your laptop screen with a single USB",
+    "url": "https://betalist.com/startups/slidenjoy"
+   }
+  ]
+ },
+ "strategy": {
+  "summary": "Piață mare și fragmentată; clienții concurenței se plâng de instabilitate.",
+  "complaints": [
+   {
+    "theme": "Instabilitate",
+    "mentions": 4,
+    "severity": "high",
+    "quotes": [
+     "Instabil, fara deschidere mare"
+    ],
+    "opportunity": "Bază lată, antiderapantă",
+    "source": "emag_reviews"
+   }
+  ],
+  "personas": [
+   {
+    "id": "p1",
+    "name": "Andrei, programator remote",
+    "age_range": "25-35",
+    "occupation": "programator",
+    "description": "Lucrează de acasă 8 ore pe zi.",
+    "motivations": [
+     "postură"
+    ],
+    "pain_points": [
+     "dureri de gât"
+    ],
+    "channels": [
+     "instagram",
+     "tiktok"
+    ],
+    "buying_triggers": [
+     "dureri de spate"
+    ],
+    "objections": [
+     "preț"
+    ],
+    "message_hook": "Gâtul tău îți va mulțumi."
+   }
+  ],
+  "positioning": {
+   "statement": "Suportul stabil pentru cei care lucrează oriunde.",
+   "main_message": "Nu se clatină. Niciodată.",
+   "tone": "prietenos",
+   "proof_points": [
+    "bază lată cu silicon"
+   ],
+   "messages": [
+    {
+     "complaint_theme": "Instabilitate",
+     "message": "Stabil pe orice birou",
+     "proof_claim": "bază lată cu silicon antiderapant"
+    }
+   ]
+  }
+ },
+ "content": {
+  "listing": {
+   "titles": [
+    "Suport laptop aluminiu reglabil, 6 trepte, pliabil, 10-17 inch"
+   ],
+   "description": "…",
+   "bullets": [
+    "Stabil: bază lată cu silicon"
+   ],
+   "search_keywords": [
+    "suport laptop"
+   ]
+  },
+  "ads": [
+   {
+    "id": "ad1",
+    "persona_id": "p1",
+    "channel": "meta",
+    "angle": "stabilitate",
+    "headline": "Nu se clatină",
+    "primary_text": "…",
+    "cta": "Cumpără acum"
+   }
+  ],
+  "social_posts": [
+   {
+    "channel": "instagram",
+    "format": "reel",
+    "text": "…",
+    "hashtags": [
+     "#wfh"
+    ]
+   }
+  ],
+  "image_ideas": [
+   {
+    "title": "Birou de lemn",
+    "description": "…",
+    "generation_prompt": "aluminium laptop stand on a wooden desk, morning light"
+   }
+  ],
+  "video_concepts": [
+   {
+    "id": "v1",
+    "title": "Nu se clatină",
+    "persona_id": "p1",
+    "hook": "Laptopul tău tremură când tastezi?",
+    "shots": [
+     {
+      "description": "Laptop pe suport",
+      "video_prompt": "close-up of a laptop on an aluminium stand, gentle push-in, soft daylight",
+      "duration_s": 4,
+      "caption": "Nu se mai clatină"
+     }
+    ],
+    "end_card_lines": [
+     "79 lei",
+     "Suport laptop Ergodesk",
+     "Comandă pe eMAG"
+    ],
+    "music_mood": "lo-fi"
+   }
+  ]
+ },
+ "plan": {
+  "channels": [
+   {
+    "channel": "meta",
+    "label": "Facebook + Instagram",
+    "share_pct": 40.91,
+    "budget_ron": 818.18,
+    "weekly_budget_ron": 204.55,
+    "est_impressions": 68182,
+    "est_clicks": 682,
+    "est_orders": 8.18,
+    "est_revenue_ron": 646.36,
+    "roas": 0.79,
+    "cpc_ron": 1.2,
+    "cpa_ron": 100,
+    "rationale": "Persona p1 e pe Instagram",
+    "formats": [
+     "reels"
+    ]
+   }
+  ],
+  "totals": {
+   "budget_ron": 2000,
+   "est_impressions": 154092,
+   "est_clicks": 1486,
+   "est_orders": 22.29,
+   "est_revenue_ron": 1760.98,
+   "roas": 0.88,
+   "cpa_ron": 89.72
+  },
+  "calendar": [
+   {
+    "week": 1,
+    "theme": "Lansare",
+    "goal": "Primele vânzări",
+    "actions": [
+     {
+      "day": "Luni",
+      "channel": "meta",
+      "action": "Pornește ad1",
+      "content_refs": [
+       "ad1"
+      ]
+     }
+    ]
+   }
+  ],
+  "ab_tests": [
+   {
+    "id": "t1",
+    "name": "Stabil vs portabil",
+    "hypothesis": "…",
+    "channel": "meta",
+    "metric": "ctr",
+    "variant_a": "Nu se clatină",
+    "variant_b": "280 g",
+    "decision_rule": "câștigă CTR mai mare",
+    "sizing": {
+     "metric": "ctr",
+     "sample_unit": "impressions",
+     "baseline_rate_pct": 1,
+     "min_detectable_lift_pct": 30,
+     "sample_per_variant": 19827,
+     "est_cost_ron": 475.85,
+     "est_days": 16.28,
+     "feasible_in_campaign": true
+    }
+   }
+  ],
+  "kpis": [
+   "CTR",
+   "ROAS"
+  ]
+ },
+ "ai_model": "google/gemini-2.5-flash",
+ "cost": {
+  "scraper_cost_usd": 0.0045,
+  "pages_fetched": 9,
+  "ai_text_cost_usd": 0.0148,
+  "video_cost_usd": 0.2,
+  "editing_cost_usd": 0.0042,
+  "total_cost_usd": 0.2235,
+  "total_cost_ron": 1.0281,
+  "ad_budget_ron": 2000,
+  "cost_pct_of_budget": 0.051405,
+  "usd_to_ron": 4.6
+ },
+ "ui_data": {}
+}
