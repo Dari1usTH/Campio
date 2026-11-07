@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { PageLoading, PageError } from "@/components/app/PageState";
 import { EmptyState } from "@/components/campio/Illustrations";
 import { useKitCopy } from "@/features/campaign/kit/copy";
-import { mediaUrl } from "@/features/campaign/kit/ui";
+import { VideoFrame, mediaUrl } from "@/features/campaign/kit/ui";
 
 type Tab = "edited" | "generated" | "upload";
 
@@ -82,7 +82,7 @@ export default function AssetsPage() {
       ) : items.length === 0 ? (
         <EmptyState title={t.assets.emptyTitle} />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {items.map((a) => (
             <AssetCard
               key={a.id}
@@ -102,36 +102,41 @@ function AssetCard({ asset: a, campaign }: { asset: Asset; campaign: string }) {
   const done = a.status === "completed";
   return (
     <article className="min-w-0 rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-soft">
-      <div className="grid aspect-[4/5] place-items-center overflow-hidden rounded-[1.2rem] bg-navy">
-        {!done ? (
-          <p className="flex items-center gap-2 p-4 text-center text-xs text-cream/80">
+      {a.mime.startsWith("video/") ? (
+        <VideoFrame
+          src={done ? url : undefined}
+          {...(a.width ? { width: a.width } : {})}
+          {...(a.height ? { height: a.height } : {})}
+        >
+          <p className="flex items-center gap-2 p-4 text-center text-xs text-white/80">
             {isAssetActive(a) && <Loader2 className="size-4 animate-spin" />}
             {a.status === "failed" ? c.video.failed : c.video.pending}
           </p>
-        ) : a.mime.startsWith("video/") ? (
-          <video
-            src={url}
-            controls
-            playsInline
-            preload="metadata"
-            className="size-full object-contain"
-          />
-        ) : a.mime.startsWith("image/") ? (
-          <img
-            src={url}
-            alt={a.name}
-            loading="lazy"
-            className="size-full object-cover"
-          />
-        ) : a.mime.startsWith("audio/") ? (
-          <div className="grid w-full gap-3 p-4 justify-items-center">
-            <Music className="size-8 text-cream/70" />
-            <audio src={url} controls className="w-full" />
-          </div>
-        ) : (
-          <Film className="size-8 text-cream/70" />
-        )}
-      </div>
+        </VideoFrame>
+      ) : (
+        <div className="grid aspect-square place-items-center overflow-hidden rounded-2xl bg-navy">
+          {!done ? (
+            <p className="flex items-center gap-2 p-4 text-center text-xs text-cream/80">
+              {isAssetActive(a) && <Loader2 className="size-4 animate-spin" />}
+              {a.status === "failed" ? c.video.failed : c.video.pending}
+            </p>
+          ) : a.mime.startsWith("image/") ? (
+            <img
+              src={url}
+              alt={a.name}
+              loading="lazy"
+              className="size-full object-cover"
+            />
+          ) : a.mime.startsWith("audio/") ? (
+            <div className="grid w-full justify-items-center gap-3 p-4">
+              <Music className="size-8 text-cream/70" />
+              <audio src={url} controls className="w-full" />
+            </div>
+          ) : (
+            <Film className="size-8 text-cream/70" />
+          )}
+        </div>
+      )}
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

@@ -211,6 +211,7 @@ const en = {
     regenerate: "Generate again",
     clips: "Clips",
     pending: "Generating…",
+    notGenerated: "Not generated yet",
     failed: "Failed",
     edit: "Edit into a reel with AI",
     instructions:
@@ -538,6 +539,7 @@ const ro: KitCopy = {
     regenerate: "Generează din nou",
     clips: "Clipuri",
     pending: "Se generează…",
+    notGenerated: "Încă negenerat",
     failed: "Eșuat",
     edit: "Montează un reel cu AI",
     instructions: "Instrucțiuni pentru editorul AI (opțional)",

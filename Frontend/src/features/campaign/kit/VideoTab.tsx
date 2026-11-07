@@ -30,7 +30,7 @@ import {
 import { formatRelative } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useKitCopy } from "./copy";
-import { Notice, Panel, Pending, mediaUrl, usd } from "./ui";
+import { Notice, Panel, Pending, VideoFrame, mediaUrl, usd } from "./ui";
 
 type Role = "product_image" | "logo" | "music" | "footage";
 const ROLES: Role[] = ["product_image", "logo", "music", "footage"];
@@ -282,42 +282,45 @@ function ConceptCard({
           {concept.hook}
         </p>
       )}
-      <ol className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ol className="-mx-1 mt-4 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
         {concept.shots.map((shot, i) => {
           const clip = latest.get(i);
           return (
-            <li key={i} className="overflow-hidden rounded-2xl bg-surface">
-              {clip && (
-                <div className="grid aspect-[9/16] max-h-80 w-full place-items-center bg-navy">
-                  {clip.status === "completed" ? (
-                    <video
-                      src={mediaUrl(clip.content_url)}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      className="size-full object-contain"
-                    />
-                  ) : clip.status === "failed" ? (
-                    <p className="p-4 text-center text-xs text-cream/80">
-                      {c.video.failed}
-                      {clip.error && `: ${clip.error}`}
-                    </p>
-                  ) : (
-                    <p className="flex items-center gap-2 text-xs text-cream/80">
-                      <Loader2 className="size-4 animate-spin" />
-                      {c.video.pending}
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="p-3 text-sm">
+            <li key={i} className="w-40 shrink-0 snap-start sm:w-44">
+              <VideoFrame
+                src={
+                  clip?.status === "completed"
+                    ? mediaUrl(clip.content_url)
+                    : undefined
+                }
+                {...(clip?.width ? { width: clip.width } : {})}
+                {...(clip?.height ? { height: clip.height } : {})}
+              >
+                {clip?.status === "failed" ? (
+                  <p className="p-3 text-center text-xs text-red-200">
+                    {c.video.failed}
+                    {clip.error && `: ${clip.error}`}
+                  </p>
+                ) : clip ? (
+                  <p className="flex items-center gap-2 text-xs text-white/80">
+                    <Loader2 className="size-4 animate-spin" />
+                    {c.video.pending}
+                  </p>
+                ) : (
+                  <span className="grid justify-items-center gap-2 p-3 text-center text-xs text-white/60">
+                    <Film className="size-6" />
+                    {c.video.notGenerated}
+                  </span>
+                )}
+              </VideoFrame>
+              <div className="pt-2 text-sm">
                 <p className="text-xs font-semibold text-muted-foreground">
                   #{i + 1} · {shot.duration_s}
                   {c.video.seconds}
                 </p>
                 <p className="mt-1">{shot.description}</p>
                 {shot.caption && (
-                  <p className="mt-2 rounded-lg bg-card px-2 py-1 text-xs font-medium">
+                  <p className="mt-2 rounded-lg bg-surface px-2 py-1 text-xs font-medium">
                     “{shot.caption}”
                   </p>
                 )}
@@ -450,7 +453,46 @@ function EditCard({
           {e.cost_usd > 0 && ` · ${usd(e.cost_usd)}`}
         </span>
       </summary>
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="mt-4 grid gap-5 md:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="mx-auto w-full max-w-[240px] md:order-first">
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">
+            {c.video.final}
+          </p>
+          {output?.status === "completed" ? (
+            <>
+              <VideoFrame
+                src={mediaUrl(output.content_url)}
+                {...(output.width ? { width: output.width } : {})}
+                {...(output.height ? { height: output.height } : {})}
+              />
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full"
+              >
+                <a href={mediaUrl(output.content_url, true)}>
+                  <Download />
+                  {c.video.download}
+                </a>
+              </Button>
+            </>
+          ) : (
+            <VideoFrame>
+              {e.status === "running" ? (
+                <p className="flex items-center gap-2 text-xs text-white/80">
+                  <Loader2 className="size-4 animate-spin" />
+                  {c.video.editRunning}
+                </p>
+              ) : (
+                <span className="grid justify-items-center gap-2 p-3 text-center text-xs text-white/60">
+                  <Film className="size-6" />
+                  {e.status === "failed" ? c.video.failed : c.video.pending}
+                </span>
+              )}
+            </VideoFrame>
+          )}
+        </div>
         <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold text-muted-foreground">
             {c.video.editLog}
@@ -489,25 +531,6 @@ function EditCard({
           )}
           {e.notes && <Notice>{e.notes}</Notice>}
         </div>
-        {output && output.status === "completed" && (
-          <div>
-            <p className="mb-2 text-xs font-semibold text-muted-foreground">
-              {c.video.final}
-            </p>
-            <video
-              src={mediaUrl(output.content_url)}
-              controls
-              playsInline
-              className="aspect-[9/16] w-full rounded-2xl bg-navy object-contain"
-            />
-            <Button asChild variant="outline" size="sm" className="mt-2 w-full">
-              <a href={mediaUrl(output.content_url, true)}>
-                <Download />
-                {c.video.download}
-              </a>
-            </Button>
-          </div>
-        )}
       </div>
     </details>
   );

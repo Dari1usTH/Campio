@@ -227,3 +227,44 @@ export function mediaUrl(path: string, download = false) {
 /** Only http(s) links are rendered: shared snapshots are untrusted input. */
 export const safeHref = (url: string) =>
   /^https?:\/\//i.test(url) ? url : undefined;
+
+/**
+ * A video "phone" frame. Width drives the size and the height follows the clip's real
+ * aspect ratio (9:16 by default), so videos are never squashed or letterboxed in a wide box.
+ */
+export function VideoFrame({
+  src,
+  width,
+  height,
+  className,
+  children,
+}: {
+  src?: string | undefined;
+  width?: number;
+  height?: number;
+  className?: string;
+  children?: ReactNode;
+}) {
+  const ratio = width && height ? `${width} / ${height}` : "9 / 16";
+  return (
+    <div
+      className={cn(
+        "relative grid w-full place-items-center overflow-hidden rounded-2xl bg-black",
+        className,
+      )}
+      style={{ aspectRatio: ratio }}
+    >
+      {src ? (
+        <video
+          src={src}
+          controls
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 size-full object-contain"
+        />
+      ) : (
+        children
+      )}
+    </div>
+  );
+}
