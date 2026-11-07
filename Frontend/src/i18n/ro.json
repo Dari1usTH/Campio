@@ -710,5 +710,40 @@
     "cost": "Costul kitului: 1,03 lei",
     "trend": "Google Trends · 5 ani",
     "reel": "Reel montat de AI"
+  },
+  "chatbot": {
+    "open": "Deschide ajutorul și chatul AI",
+    "title": "Ai nevoie de ajutor?",
+    "subtitle": "Răspunsuri rapide sau întreabă AI-ul despre campania ta.",
+    "talk": "Vorbește cu AI",
+    "talkHint": "Deschide chatul AI pentru campania ta.",
+    "talkHintNoCampaign": "Creează mai întâi o campanie — AI-ul discută despre kitul tău.",
+    "faq": [
+      {
+        "q": "Cum creez o campanie?",
+        "a": "Apasă „Creează campanie”, descrie produsul într-un singur mesaj și adaugă până la 5 fotografii. Campio analizează piața și construiește kitul complet."
+      },
+      {
+        "q": "Cât durează o campanie?",
+        "a": "De obicei câteva minute. Poți părăsi pagina — kitul se generează în continuare și primești o notificare când e gata."
+      },
+      {
+        "q": "De ce îmi pune Campio întrebări?",
+        "a": "Dacă lipsește ceva important din mesaj, AI-ul pune câteva întrebări scurte. Răspunde direct în pagină și generarea continuă."
+      },
+      {
+        "q": "Ce pot întreba în chatul AI?",
+        "a": "Orice despre kitul tău: rescrie textele, ajustează publicul sau poziționarea ori simulează împărțirea bugetului pe canale."
+      },
+      {
+        "q": "Pot genera videoclipuri și postere?",
+        "a": "Da. Deschide tabul Video sau Postere al unei campanii finalizate pentru a genera clipuri și postere, apoi rafinează-le cu editorul AI."
+      },
+      {
+        "q": "Cum distribui o campanie?",
+        "a": "Deschide campania și folosește opțiunea de distribuire pentru un link doar-citire pe care îl poți trimite oricui."
+      }
+    ],
+    "talkHintSignedOut": "Creează-ți cont gratuit ca să discuți cu AI-ul despre campania ta."
   }
 }

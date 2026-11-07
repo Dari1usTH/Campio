@@ -25,6 +25,7 @@ import candle from "@/assets/candle.jpg";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { ProductPreview } from "@/components/landing/ProductPreview";
 import { Logo } from "@/components/brand/Logo";
+import { ChatbotWidget } from "@/components/app/ChatbotWidget";
 import { Button } from "@/components/ui/button";
 import { Surface, Eyebrow } from "@/components/campio/Surface";
 import { Chip } from "@/components/campio/Chip";
@@ -609,6 +610,7 @@ export default function LandingPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
+      <ChatbotWidget placement="page" />
     </div>
   );
 }

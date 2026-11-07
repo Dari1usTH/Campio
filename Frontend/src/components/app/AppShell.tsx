@@ -21,6 +21,7 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { ChatbotWidget } from "@/components/app/ChatbotWidget";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSession, useSessionReady } from "@/hooks/use-session";
@@ -341,6 +342,7 @@ export function AppShell() {
           </Link>
         ))}
       </nav>
+      <ChatbotWidget />
     </div>
   );
 }

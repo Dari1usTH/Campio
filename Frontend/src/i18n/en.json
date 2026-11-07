@@ -710,5 +710,40 @@
     "cost": "Kit cost: 1.03 lei",
     "trend": "Google Trends · 5 years",
     "reel": "AI-edited reel"
+  },
+  "chatbot": {
+    "open": "Open help & AI chat",
+    "title": "Need a hand?",
+    "subtitle": "Quick answers, or ask the AI about your campaign.",
+    "talk": "Talk to AI",
+    "talkHint": "Opens the AI chat for your campaign.",
+    "talkHintNoCampaign": "Create a campaign first — the AI chats about your kit.",
+    "faq": [
+      {
+        "q": "How do I create a campaign?",
+        "a": "Click “Create campaign”, describe your product in one prompt and add up to 5 photos. Campio researches the market and builds the full kit for you."
+      },
+      {
+        "q": "How long does a campaign take?",
+        "a": "Usually a few minutes. You can leave the page — the kit keeps generating and you'll get a notification when it's ready."
+      },
+      {
+        "q": "Why is Campio asking me questions?",
+        "a": "If something important is missing from your prompt, the AI asks a few short questions. Answer them inline and generation continues."
+      },
+      {
+        "q": "What can I ask the AI chat?",
+        "a": "Anything about your kit: rewrite copy, adjust the audience or positioning, or simulate how a budget splits across channels."
+      },
+      {
+        "q": "Can I generate videos and posters?",
+        "a": "Yes. Open the Video or Posters tab of a completed campaign to generate clips and posters, and refine them with the AI editor."
+      },
+      {
+        "q": "How do I share a campaign?",
+        "a": "Open the campaign and use the share option to get a read-only link you can send to anyone."
+      }
+    ],
+    "talkHintSignedOut": "Sign up free to chat with the AI about your campaign."
   }
 }
