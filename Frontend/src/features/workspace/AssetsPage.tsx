@@ -1,4 +1,3 @@
-import { tr } from "@/i18n";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
