@@ -171,7 +171,7 @@ export function AppShell() {
         </div>
       </aside>
       <div className="app-body min-w-0">
-        <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-3 border-b border-border/60 bg-background/90 px-5 backdrop-blur-xl md:px-8 xl:px-10">
+        <header className="sticky top-0 z-30 flex h-20 items-center justify-between gap-3 border-b border-border/60 bg-background px-5 md:px-8 xl:px-10">
           <div className="flex min-w-0 items-center gap-3">
             <Link to="/" className="lg:hidden">
               <Logo size={28} />

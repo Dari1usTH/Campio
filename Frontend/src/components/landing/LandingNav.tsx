@@ -22,7 +22,7 @@ export function LandingNav() {
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <nav
         aria-label={tr("extra.mainNavigation")}
-        className="glass mx-auto flex h-16 max-w-6xl items-center justify-between rounded-full border border-border/60 pl-5 pr-2 shadow-soft"
+        className="mx-auto bg-background flex h-16 max-w-6xl items-center justify-between rounded-full border border-border/60 pl-5 pr-2 shadow-soft"
       >
         <Link to="/" aria-label={tr("extra.homeLabel")}>
           <Logo size={28} />
@@ -65,7 +65,7 @@ export function LandingNav() {
         </div>
       </nav>
       {open && (
-        <div className="glass mx-auto mt-2 max-w-6xl animate-rise rounded-[1.75rem] border border-border/60 p-2 shadow-lift lg:hidden">
+        <div className="mx-auto bg-background mt-2 max-w-6xl animate-rise rounded-[1.75rem] border border-border/60 p-2 shadow-lift lg:hidden">
           {links.map((l) => (
             <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="flex min-h-11 items-center rounded-2xl px-4 font-medium hover:bg-secondary">
               {l.label}

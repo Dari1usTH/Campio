@@ -22,7 +22,7 @@ export default function SharePage() {
   }, []);
   return (
     <div className="min-h-screen bg-background">
-      <header className="glass sticky top-0 z-40 border-b border-border">
+      <header className="sticky top-0 bg-background z-40 border-b border-border">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8">
           <Link to="/" aria-label={c.backHome}>
             <Logo size={30} />
