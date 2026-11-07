@@ -261,6 +261,21 @@ const en = {
     edits: "Previous edits",
     notReady: "Videos can be made once the kit is ready.",
     modelsError: "Couldn't load the video model catalogue.",
+    textOnClip: "Text on clip",
+    customTitle: "Custom clip",
+    customHint:
+      "Describe the clip you want and we'll generate it with the model above. Add a caption to have it written on the clip.",
+    customPrompt: "What should the clip show?",
+    customPromptPlaceholder:
+      "e.g. slow close-up of the product on a wooden desk, morning light, gentle push-in (English works best)",
+    customCaption: "On-screen text (optional)",
+    customCaptionPlaceholder: "e.g. Comandă azi pe eMAG",
+    customDuration: "Length",
+    customUseImage: "Start from my product photo",
+    customGenerate: "Generate my clip",
+    customQueued: "Clip queued: it will appear below in a minute or two.",
+    customClips: "Your clips",
+    customEdit: "Edit your clips into a reel with AI",
   },
   posters: {
     model: "Image model",
@@ -638,6 +653,21 @@ const ro: KitCopy = {
     edits: "Montaje anterioare",
     notReady: "Video-urile se pot face după ce kitul e gata.",
     modelsError: "Nu am putut încărca lista de modele video.",
+    textOnClip: "Text pe clip",
+    customTitle: "Clip personalizat",
+    customHint:
+      "Descrie clipul pe care îl vrei și îl generăm cu modelul de mai sus. Adaugă un text ca să apară scris pe clip.",
+    customPrompt: "Ce să arate clipul?",
+    customPromptPlaceholder:
+      "ex. slow close-up of the product on a wooden desk, morning light, gentle push-in (în engleză merge cel mai bine)",
+    customCaption: "Text pe ecran (opțional)",
+    customCaptionPlaceholder: "ex. Comandă azi pe eMAG",
+    customDuration: "Durată",
+    customUseImage: "Pornește de la poza produsului",
+    customGenerate: "Generează clipul meu",
+    customQueued: "Clipul e în lucru: apare mai jos în 1–2 minute.",
+    customClips: "Clipurile tale",
+    customEdit: "Montează clipurile tale într-un reel cu AI",
   },
   posters: {
     model: "Model de imagine",

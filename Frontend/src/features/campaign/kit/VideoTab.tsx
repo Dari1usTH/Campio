@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { TextArea, inputClass } from "@/components/campio/Field";
+import { TextArea, TextInput, inputClass } from "@/components/campio/Field";
 import { campaignsService } from "@/services/campaigns";
 import {
   assetsQuery,
@@ -53,10 +53,8 @@ export function VideoTab({ kit }: { kit: Kit }) {
   }, [models.data, model]);
   if (!content) return <Pending />;
   const resolution = models.data?.default_resolution || "480p";
-  const price = pricePerSecond(
-    models.data?.items.find((m) => m.id === model),
-    resolution,
-  );
+  const modelInfo = models.data?.items.find((m) => m.id === model);
+  const price = pricePerSecond(modelInfo, resolution);
   const list = assets.data ?? [];
   return (
     <div className="space-y-5">
@@ -90,6 +88,16 @@ export function VideoTab({ kit }: { kit: Kit }) {
           </div>
         )}
       </Panel>
+      <CustomClipPanel
+        kit={kit}
+        clips={list.filter((a) => a.kind === "generated" && !a.meta.concept_id)}
+        uploads={list.filter(
+          (a) => a.kind === "upload" && a.status === "completed",
+        )}
+        model={model}
+        durations={modelInfo?.supported_durations ?? []}
+        pricePerSecond={price}
+      />
       <div className="space-y-5">
         {content.video_concepts.map((concept) => (
           <ConceptCard
@@ -188,6 +196,248 @@ function Uploads({ kit, assets }: { kit: Kit; assets: Asset[] }) {
   );
 }
 
+const DEFAULT_CUSTOM_S = 8;
+
+function closest(xs: number[], target: number) {
+  return xs.reduce(
+    (best, x) => (Math.abs(x - target) < Math.abs(best - target) ? x : best),
+    xs[0] ?? target,
+  );
+}
+
+function CustomClipPanel({
+  kit,
+  clips,
+  uploads,
+  model,
+  durations,
+  pricePerSecond: price,
+}: {
+  kit: Kit;
+  clips: Asset[];
+  uploads: Asset[];
+  model: string;
+  durations: number[];
+  pricePerSecond: number | null;
+}) {
+  const c = useKitCopy();
+  const qc = useQueryClient();
+  const [prompt, setPrompt] = useState("");
+  const [caption, setCaption] = useState("");
+  const [picked, setPicked] = useState<number | null>(null);
+  const [useImage, setUseImage] = useState(true);
+  const [instructions, setInstructions] = useState("");
+  const options = durations.length
+    ? [...durations].sort((a, b) => a - b)
+    : [5, 6, 8, 10];
+  const duration =
+    picked != null && options.includes(picked)
+      ? picked
+      : closest(options, DEFAULT_CUSTOM_S);
+  const generate = useMutation({
+    mutationFn: () =>
+      campaignsService.generateVideos(kit.id, {
+        prompt: prompt.trim(),
+        duration_s: duration,
+        use_product_image: useImage,
+        ...(caption.trim() ? { caption: caption.trim() } : {}),
+        ...(model ? { model } : {}),
+      }),
+    onSuccess: () => {
+      toast.success(c.video.customQueued);
+      setPrompt("");
+      setCaption("");
+      void qc.invalidateQueries({ queryKey: campaignKeys.assets(kit.id) });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const sorted = [...clips].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
+  const ready = sorted.filter((a) => a.status === "completed");
+  const edit = useMutation({
+    mutationFn: () =>
+      campaignsService.startEdit(
+        kit.id,
+        { assetIds: [...ready, ...uploads].map((a) => a.id) },
+        instructions,
+      ),
+    onSuccess: (e) => {
+      qc.setQueryData(campaignKeys.edit(e.id), e);
+      void qc.invalidateQueries({ queryKey: campaignKeys.edits(kit.id) });
+      setInstructions("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  return (
+    <Panel title={c.video.customTitle}>
+      <p className="-mt-2 mb-4 text-sm text-muted-foreground">
+        {c.video.customHint}
+      </p>
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (prompt.trim()) generate.mutate();
+        }}
+      >
+        <label htmlFor="custom-prompt" className="text-sm font-medium">
+          {c.video.customPrompt}
+        </label>
+        <TextArea
+          id="custom-prompt"
+          className="min-h-24"
+          maxLength={2000}
+          placeholder={c.video.customPromptPlaceholder}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <div>
+            <label htmlFor="custom-caption" className="text-sm font-medium">
+              {c.video.customCaption}
+            </label>
+            <TextInput
+              id="custom-caption"
+              maxLength={80}
+              placeholder={c.video.customCaptionPlaceholder}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="custom-duration" className="text-sm font-medium">
+              {c.video.customDuration}
+            </label>
+            <select
+              id="custom-duration"
+              className={cn(inputClass, "w-auto")}
+              value={duration}
+              onChange={(e) => setPicked(Number(e.target.value))}
+            >
+              {options.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                  {c.video.seconds}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={useImage}
+            onChange={(e) => setUseImage(e.target.checked)}
+          />
+          {c.video.customUseImage}
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="submit"
+            variant="coral"
+            disabled={generate.isPending || !prompt.trim()}
+          >
+            {generate.isPending ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Clapperboard />
+            )}
+            {c.video.customGenerate}
+          </Button>
+          {price != null && (
+            <span className="text-xs text-muted-foreground">
+              {c.video.estimate}:{" "}
+              <b className="text-foreground">{usd(price * duration)}</b>
+            </span>
+          )}
+        </div>
+      </form>
+      {sorted.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 font-semibold">{c.video.customClips}</p>
+          <ul className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
+            {sorted.map((clip) => (
+              <li key={clip.id} className="w-40 shrink-0 snap-start sm:w-44">
+                <VideoFrame
+                  src={
+                    clip.status === "completed"
+                      ? mediaUrl(clip.content_url)
+                      : undefined
+                  }
+                  {...(clip.width ? { width: clip.width } : {})}
+                  {...(clip.height ? { height: clip.height } : {})}
+                >
+                  {clip.status === "failed" ? (
+                    <p className="p-3 text-center text-xs text-red-200">
+                      {c.video.failed}
+                      {clip.error && `: ${clip.error}`}
+                    </p>
+                  ) : (
+                    <p className="flex items-center gap-2 text-xs text-white/80">
+                      <Loader2 className="size-4 animate-spin" />
+                      {c.video.pending}
+                    </p>
+                  )}
+                </VideoFrame>
+                <div className="pt-2 text-sm">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {clip.duration_s}
+                    {c.video.seconds}
+                    {clip.meta.caption_burned && (
+                      <span className="ml-2 rounded-full bg-success-tint px-2 py-0.5 text-[10px] text-success-ink">
+                        {c.video.textOnClip}
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-1 line-clamp-3" title={clip.meta.prompt}>
+                    {clip.meta.prompt}
+                  </p>
+                  {clip.meta.caption && (
+                    <p className="mt-2 rounded-lg bg-surface px-2 py-1 text-xs font-medium">
+                      “{clip.meta.caption}”
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {ready.length > 0 && (
+            <form
+              className="mt-4 space-y-3 rounded-2xl border border-dashed border-border p-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                edit.mutate();
+              }}
+            >
+              <p className="flex items-center gap-2 font-semibold">
+                <Wand2 className="size-4 text-coral-ink" />
+                {c.video.customEdit}
+              </p>
+              <TextArea
+                aria-label={c.video.instructions}
+                className="min-h-20"
+                maxLength={4000}
+                placeholder={c.video.instructionsPlaceholder}
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+              />
+              <Button type="submit" disabled={edit.isPending}>
+                {edit.isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Wand2 />
+                )}
+                {c.video.startEdit}
+              </Button>
+            </form>
+          )}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 function ConceptCard({
   kit,
   concept,
@@ -210,14 +460,21 @@ function ConceptCard({
   )?.name;
   const generate = useMutation({
     mutationFn: () =>
-      campaignsService.generateVideos(kit.id, concept.id, model || undefined),
+      campaignsService.generateVideos(kit.id, {
+        concept_id: concept.id,
+        ...(model ? { model } : {}),
+      }),
     onSuccess: () =>
       void qc.invalidateQueries({ queryKey: campaignKeys.assets(kit.id) }),
     onError: (e) => toast.error(e.message),
   });
   const edit = useMutation({
     mutationFn: () =>
-      campaignsService.startEdit(kit.id, concept.id, instructions),
+      campaignsService.startEdit(
+        kit.id,
+        { conceptId: concept.id },
+        instructions,
+      ),
     onSuccess: (e) => {
       qc.setQueryData(campaignKeys.edit(e.id), e);
       void qc.invalidateQueries({ queryKey: campaignKeys.edits(kit.id) });
@@ -317,6 +574,11 @@ function ConceptCard({
                 <p className="text-xs font-semibold text-muted-foreground">
                   #{i + 1} · {shot.duration_s}
                   {c.video.seconds}
+                  {clip?.meta.caption_burned && (
+                    <span className="ml-2 rounded-full bg-success-tint px-2 py-0.5 text-[10px] text-success-ink">
+                      {c.video.textOnClip}
+                    </span>
+                  )}
                 </p>
                 <p className="mt-1">{shot.description}</p>
                 {shot.caption && (

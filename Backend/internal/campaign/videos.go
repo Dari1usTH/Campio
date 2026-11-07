@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
@@ -33,6 +34,11 @@ const (
 	assetInProgress = "in_progress"
 	maxClipsPerCall = 6
 	videoTimeout    = 30 * time.Minute
+
+	maxClipPromptChars  = 2000
+	maxCaptionChars     = 80
+	defaultCustomClipS  = 8
+	captionBurnTimeoutS = 120
 )
 
 // VideoRequest asks for clips: either the shots of a concept, or a free prompt.
@@ -40,6 +46,7 @@ type VideoRequest struct {
 	ConceptID       string `json:"concept_id"`
 	ShotIndexes     []int  `json:"shot_indexes"`
 	Prompt          string `json:"prompt,omitempty"`
+	Caption         string `json:"caption,omitempty"` // on-screen text burned into a custom clip
 	DurationS       int    `json:"duration_s"`
 	AspectRatio     string `json:"aspect_ratio"`
 	Resolution      string `json:"resolution,omitempty"`
@@ -57,6 +64,7 @@ type VideoMeta struct {
 	ConceptID        string  `json:"concept_id,omitempty"`
 	ShotIndex        *int    `json:"shot_index,omitempty"`
 	Caption          string  `json:"caption,omitempty"`
+	CaptionBurned    bool    `json:"caption_burned,omitempty"`
 	UsedProductImage bool    `json:"used_product_image,omitempty"`
 	JobID            string  `json:"openrouter_job_id,omitempty"`
 	EstimatedCostUSD float64 `json:"estimated_cost_usd,omitempty"`
@@ -124,11 +132,18 @@ func (s *Service) GenerateVideos(ctx context.Context, campaignID uuid.UUID, req 
 			specs = append(specs, clipSpec{prompt: sh.VideoPrompt, duration: d, caption: sh.Caption, shotIndex: &ii, withImage: i == 0})
 		}
 	case strings.TrimSpace(req.Prompt) != "":
+		prompt, caption := strings.TrimSpace(req.Prompt), strings.TrimSpace(req.Caption)
+		if n := utf8.RuneCountInString(prompt); n > maxClipPromptChars {
+			return nil, 0, invalid("prompt is too long (%d characters, max %d)", n, maxClipPromptChars)
+		}
+		if n := utf8.RuneCountInString(caption); n > maxCaptionChars {
+			return nil, 0, invalid("caption is too long (%d characters, max %d)", n, maxCaptionChars)
+		}
 		d := req.DurationS
 		if d <= 0 {
-			d = 5
+			d = defaultCustomClipS
 		}
-		specs = append(specs, clipSpec{prompt: strings.TrimSpace(req.Prompt), duration: d, withImage: true})
+		specs = append(specs, clipSpec{prompt: prompt, duration: d, caption: caption, withImage: true})
 	default:
 		return nil, 0, invalid("concept_id or prompt is required")
 	}
@@ -161,9 +176,11 @@ func (s *Service) GenerateVideos(ctx context.Context, campaignID uuid.UUID, req 
 			meta.EstimatedCostUSD = analysis.Round6(est)
 			total += est
 		}
-		name := "clip.mp4"
+		name := "custom.mp4"
 		if req.ConceptID != "" && sp.shotIndex != nil {
 			name = fmt.Sprintf("%s-shot%d.mp4", req.ConceptID, *sp.shotIndex+1)
+		} else {
+			meta.Title = "Clip personalizat"
 		}
 		a := db.Asset{ID: uuid.New(), CampaignID: campaignID, Kind: KindGenerated, Status: StatusPending, Name: name, Mime: "video/mp4", DurationS: float64(sp.duration)}
 
@@ -261,7 +278,16 @@ func (s *Service) pollVideo(a db.Asset) {
 				fail(err.Error())
 				return
 			}
-			a.Status, a.FilePath, a.SizeBytes = StatusCompleted, rel, n
+			a.FilePath, a.SizeBytes = rel, n
+			if meta.Caption != "" && s.Sandbox != nil {
+				if size, err := s.burnCaption(ctx, s.Media.Path(rel), meta.Caption); err != nil {
+					slog.Warn("burn caption; keeping the raw clip", "asset", a.ID, "err", err)
+				} else {
+					a.SizeBytes, meta.CaptionBurned = size, true
+					a.Meta, _ = json.Marshal(meta)
+				}
+			}
+			a.Status = StatusCompleted
 			a.Width, a.Height = frameSize(meta.Resolution, meta.AspectRatio)
 			_ = s.Store.UpdateAsset(context.Background(), a)
 			return
@@ -274,6 +300,46 @@ func (s *Service) pollVideo(a db.Asset) {
 			return
 		}
 	}
+}
+
+// burnCaption overlays caption on the clip at path (in place) using the video worker.
+func (s *Service) burnCaption(ctx context.Context, path, caption string) (int64, error) {
+	script := fmt.Sprintf(`import base64
+from vidkit import *
+text = base64.b64decode("%s").decode("utf-8")
+info = probe("in/clip.mp4")
+d = info["duration"] or 5.0
+size = max(24, round((info["width"] or 720) * 0.065))
+captions("in/clip.mp4", "out/clip.mp4", [(min(0.3, d / 4), max(d - 0.3, d * 3 / 4), text)], position="bottom", size=size)
+`, base64.StdEncoding.EncodeToString([]byte(caption)))
+	res, err := s.Sandbox.Run(ctx, script, map[string]string{"clip.mp4": path}, captionBurnTimeoutS)
+	if err != nil {
+		return 0, err
+	}
+	if res.ExitCode != 0 || res.TimedOut {
+		return 0, fmt.Errorf("caption script failed (exit %d, timed out %v): %s", res.ExitCode, res.TimedOut, truncateStr(res.Stderr, 500))
+	}
+	for _, o := range res.Outputs {
+		if o.Name == "clip.mp4" && len(o.Data) > 0 {
+			tmp := path + ".tmp"
+			if err := os.WriteFile(tmp, o.Data, 0o644); err != nil {
+				return 0, err
+			}
+			if err := os.Rename(tmp, path); err != nil {
+				os.Remove(tmp)
+				return 0, err
+			}
+			return int64(len(o.Data)), nil
+		}
+	}
+	return 0, errors.New("caption script produced no output")
+}
+
+func truncateStr(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[len(s)-n:]
 }
 
 // productImageURL returns the image used as first frame: the latest uploaded

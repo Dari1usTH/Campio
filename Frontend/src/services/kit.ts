@@ -595,6 +595,10 @@ export const assetSchema = z
         concept_id: str,
         shot_index: num,
         caption: str,
+        caption_burned: z
+          .boolean()
+          .nullish()
+          .transform((v) => v ?? false),
         title: str,
         notes: str,
         edit_id: str,
@@ -612,6 +616,7 @@ export const assetSchema = z
             concept_id: "",
             shot_index: 0,
             caption: "",
+            caption_burned: false,
             title: "",
             notes: "",
             edit_id: "",
@@ -669,6 +674,8 @@ export const videoModelListSchema = z.object({
           .transform((v) => v ?? {}),
         cheapest_per_second_usd: z.number().nullish(),
         supported_resolutions: z.array(z.string()).nullish(),
+        supported_durations: z.array(z.number()).nullish(),
+        supported_frame_images: z.array(z.string()).nullish(),
       })
       .passthrough(),
   ),

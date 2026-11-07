@@ -73,6 +73,16 @@ export function campaignFormData(prompt: string, images: File[]): FormData {
   return form;
 }
 
+export type GenerateVideosBody =
+  | { concept_id: string; model?: string }
+  | {
+      prompt: string;
+      caption?: string;
+      duration_s?: number;
+      use_product_image?: boolean;
+      model?: string;
+    };
+
 export const campaignsService = {
   async list() {
     const items: z.infer<typeof campaignListSchema>["items"] = [];
@@ -169,7 +179,8 @@ export const campaignsService = {
   async videoModels() {
     return videoModelListSchema.parse(await http("/video-models"));
   },
-  async generateVideos(id: string, conceptId: string, model?: string) {
+  /** Concept clips (`concept_id`) or one custom clip from the seller's own `prompt`. */
+  async generateVideos(id: string, body: GenerateVideosBody) {
     return z
       .object({
         items: z.array(assetSchema),
@@ -178,11 +189,7 @@ export const campaignsService = {
       .parse(
         await http(`${idPath(id)}/videos`, {
           method: "POST",
-          body: JSON.stringify(
-            model
-              ? { concept_id: conceptId, model }
-              : { concept_id: conceptId },
-          ),
+          body: JSON.stringify(body),
         }),
       );
   },
@@ -214,10 +221,18 @@ export const campaignsService = {
       .object({ items: z.array(editSchema) })
       .parse(await http(`${idPath(id)}/edits`)).items;
   },
-  async startEdit(id: string, conceptId: string, instructions?: string) {
-    const body: { concept_id: string; instructions?: string } = {
-      concept_id: conceptId,
-    };
+  async startEdit(
+    id: string,
+    target: { conceptId?: string; assetIds?: string[] },
+    instructions?: string,
+  ) {
+    const body: {
+      concept_id?: string;
+      asset_ids?: string[];
+      instructions?: string;
+    } = {};
+    if (target.conceptId) body.concept_id = target.conceptId;
+    if (target.assetIds?.length) body.asset_ids = target.assetIds;
     if (instructions?.trim()) body.instructions = instructions.trim();
     return editSchema.parse(
       await http(`${idPath(id)}/edits`, {

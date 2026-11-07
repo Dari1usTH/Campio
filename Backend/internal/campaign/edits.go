@@ -100,7 +100,7 @@ func (s *Service) StartEdit(ctx context.Context, campaignID uuid.UUID, req EditR
 
 	instr := strings.TrimSpace(req.Instructions)
 	if instr == "" {
-		instr = "Montează un reel vertical 9:16 de 10-20 secunde: hook în prima secundă, clipurile în ordinea shot-urilor, câte un caption scurt pe fiecare, tranziții fine și end card cu prețul, numele produsului și CTA (cu imaginea produsului dacă există)."
+		instr = "Montează un reel vertical 9:16 de 15-25 secunde: hook în prima secundă, clipurile în ordinea shot-urilor, câte un caption scurt pe clipurile care nu au deja text (caption_burned), tranziții fine și end card cu prețul, numele produsului și CTA (cu imaginea produsului dacă există)."
 	}
 	if req.TargetDurationS > 0 {
 		instr += fmt.Sprintf("\nDurată țintă: %d secunde.", req.TargetDurationS)
@@ -168,6 +168,9 @@ func (s *Service) runEdit(e db.Edit, k Kit, inputs []db.Asset, conceptID string,
 		if json.Unmarshal(a.Meta, &m) == nil {
 			if m.Caption != "" {
 				row["caption"] = m.Caption
+			}
+			if m.CaptionBurned {
+				row["caption_burned"] = true
 			}
 			if m.ShotIndex != nil {
 				row["concept_id"], row["shot"] = m.ConceptID, *m.ShotIndex+1

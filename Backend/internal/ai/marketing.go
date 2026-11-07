@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/tibi/hackathon/backend/internal/analysis"
 	"github.com/tibi/hackathon/backend/internal/model"
@@ -217,7 +218,7 @@ Generează:
 - 3-5 reclame (id "ad1".."ad5"), fiecare pentru o persona (persona_id) și un canal plătit, cu unghiul de mesaj (din poziționare), titlu, text, CTA;
 - 3-6 postări social media organice;
 - 3-4 idei de imagini (generation_prompt în engleză, pentru un model text-to-image, fără text în imagine);
-- 2 concepte video scurte 9:16 (id "v1","v2"), fiecare cu 2-3 shot-uri de 3-6 secunde. "video_prompt" în ENGLEZĂ, vizual și concret (subiect, acțiune, cadru, lumină, mișcare de cameră), fără text/litere/logo-uri în imagine, fără persoane celebre și fără branduri ale altora. "caption" = textul scurt (max 8 cuvinte) pus peste clip, în română. "end_card_lines": prima linie = prețul (ex. "79 lei"), apoi numele produsului, apoi CTA.
+- 2 concepte video scurte 9:16 (id "v1","v2"), fiecare cu 1-2 shot-uri (maxim 2) de 8-10 secunde. "video_prompt" în ENGLEZĂ, vizual și concret (subiect, acțiune, cadru, lumină, mișcare de cameră), cu treimea de jos a cadrului calmă și liberă (acolo apare textul), fără text/litere/logo-uri generate în imagine, fără persoane celebre și fără branduri ale altora. "caption" este OBLIGATORIU pe fiecare shot: textul scurt (max 8 cuvinte) scris peste clip, în română. "end_card_lines": prima linie = prețul (ex. "79 lei"), apoi numele produsului, apoi CTA.
 - 2 concepte de afiș/poster (id "poster1","poster2"), fiecare pentru o persona: "image_prompt" în ENGLEZĂ, doar scena vizuală (produsul, cadru, lumină, compoziție, stil, spațiu liber pentru text), fără text/litere/logo-uri, fără persoane celebre și fără branduri ale altora; "headline" (max 6 cuvinte), "subline" (max 10 cuvinte) și "cta" (max 3 cuvinte) sunt textele scrise pe afiș. Nu pune prețul în aceste texte: îl adaugă aplicația.
 Reguli: română naturală, fără clișee; nu inventa specificații tehnice care nu apar în descrierea produsului; folosește prețul exact primit.`
 
@@ -272,10 +273,32 @@ func (c *Client) GenerateContent(ctx context.Context, p ProductBrief, s Strategy
 	if ct.VideoConcepts == nil {
 		ct.VideoConcepts = []VideoConcept{}
 	}
+	normalizeVideoConcepts(ct.VideoConcepts)
 	if ct.PosterConcepts == nil {
 		ct.PosterConcepts = []PosterConcept{}
 	}
 	return ct, u, nil
+}
+
+// Recommended clip limits per video concept.
+const (
+	MaxShotsPerConcept = 2
+	MinShotDurationS   = 8
+	MaxShotDurationS   = 10
+)
+
+// normalizeVideoConcepts enforces the clip limits even when the model ignores the prompt.
+func normalizeVideoConcepts(vs []VideoConcept) {
+	for i := range vs {
+		if len(vs[i].Shots) > MaxShotsPerConcept {
+			vs[i].Shots = vs[i].Shots[:MaxShotsPerConcept]
+		}
+		for j := range vs[i].Shots {
+			sh := &vs[i].Shots[j]
+			sh.DurationS = min(max(sh.DurationS, MinShotDurationS), MaxShotDurationS)
+			sh.Caption = strings.TrimSpace(sh.Caption)
+		}
+	}
 }
 
 // ---------- Step 3: campaign plan + A/B tests ----------

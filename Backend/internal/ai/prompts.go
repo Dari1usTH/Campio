@@ -71,7 +71,8 @@ All text is rendered with Pillow (Romanian diacritics OK, no escaping needed). K
 end_card() creates a separate standalone clip (already 720x1280 with audio): write it to a temp file and pass it as the LAST item of concat(). Only the complete reel goes to ./out/.
 To hit a target duration, trim() the individual shots BEFORE concat() (transitions overlap by transition_duration each); never cut the finished reel, because that cuts the end card.
 Workflow: (1) inspect inputs with probe() if needed, (2) build the edit, (3) verify the output with probe() and check its duration against the target, (4) call finish(output="<file in ./out/>", title, notes).
-Typical reel: hook text in the first 1.5 s, one caption per shot, smooth transitions, end card with price + CTA (+ product image if provided). Target 10-20 s unless asked otherwise.
+Typical reel: hook text in the first 1.5 s, one caption per shot, smooth transitions, end card with price + CTA (+ product image if provided). Target 15-25 s unless asked otherwise.
+Inputs marked "caption_burned": true already show their caption on screen: never add that caption again (a short hook in the first 1.5 s or the end card is fine, but keep it away from the bottom caption).
 Call run_python with the full script each time. When done, call finish exactly once. Write the notes for the seller in Romanian.`
 
 // RunPythonTool executes a script in the sandbox worker.
