@@ -1,0 +1,79 @@
+# Explicit project name so containers/volumes never collide with another
+# compose project that happens to live in a folder also called "backend".
+name: merita-lansat
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hackathon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hackathon}
+      POSTGRES_DB: ${POSTGRES_DB:-hackathon}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Runs AI-written Python video-editing scripts. Isolated: internal-only network
+  # (no internet, cannot reach the database), read-only filesystem, no capabilities,
+  # memory/CPU/process limits. Stateless: files come in and go out with each request.
+  video-worker:
+    build: ./worker
+    restart: unless-stopped
+    networks: [sandbox]
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    environment:
+      CONCURRENCY: "2"
+      MAX_TIMEOUT_S: "300"
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      video-worker:
+        condition: service_started
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER:-hackathon}:${POSTGRES_PASSWORD:-hackathon}@db:5432/${POSTGRES_DB:-hackathon}?sslmode=disable
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
+      EDITOR_MODEL: ${EDITOR_MODEL:-}
+      VIDEO_MODEL: ${VIDEO_MODEL:-x-ai/grok-imagine-video-1.5-lite}
+      VIDEO_RESOLUTION: ${VIDEO_RESOLUTION:-480p}
+      VIDEO_ASPECT_RATIO: ${VIDEO_ASPECT_RATIO:-9:16}
+      WORKER_URL: http://video-worker:8000
+      MEDIA_DIR: /data/media
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SCRAPER_ENABLED: ${SCRAPER_ENABLED:-true}
+      TRENDS_ENABLED: ${TRENDS_ENABLED:-true}
+      CACHE_TTL: ${CACHE_TTL:-24h}
+    volumes:
+      - media:/data/media
+    networks: [backend, sandbox]
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+networks:
+  backend: {}
+  sandbox:
+    internal: true
+
+volumes:
+  pgdata:
+  media:

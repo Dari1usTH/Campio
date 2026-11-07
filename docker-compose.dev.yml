@@ -1,0 +1,12 @@
+# Local development only: exposes the video worker on 127.0.0.1:8001 so an API
+# started with `go run` can reach it. This attaches the worker to a normal
+# network (with internet access), so don't use it in production.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db video-worker
+services:
+  video-worker:
+    networks: [sandbox, devnet]
+    ports:
+      - "127.0.0.1:${WORKER_PORT:-8001}:8000"
+
+networks:
+  devnet: {}
