@@ -54,7 +54,7 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
       EDITOR_MODEL: ${EDITOR_MODEL:-}
-      VIDEO_MODEL: ${VIDEO_MODEL:-x-ai/grok-imagine-video-1.5-lite}
+      VIDEO_MODEL: ${VIDEO_MODEL:-google/veo-3.1}
       VIDEO_RESOLUTION: ${VIDEO_RESOLUTION:-480p}
       VIDEO_ASPECT_RATIO: ${VIDEO_ASPECT_RATIO:-9:16}
       WORKER_URL: http://video-worker:8000

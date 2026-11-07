@@ -12,7 +12,7 @@ that an AI editor assembles into finished reels.
 | Listing titles and description, 3–5 ads, social posts, image ideas, video concepts with shots | LLM |
 | Channel choice, 4-week calendar, A/B test ideas | LLM |
 | Budget per channel, impressions, clicks, orders, ROAS, A/B sample size, cost and duration | **code** (fixed benchmarks, z-test) |
-| Video clips per shot (product photo as first frame) | OpenRouter video model, default `x-ai/grok-imagine-video-1.5-lite` ($0.02/s at 480p) |
+| Video clips per shot (product photo as first frame) | OpenRouter video model, default `google/veo-3.1` ($0.20/s without audio, 720p+) |
 | Final reel: captions, transitions, end card with price | LLM writes Python, which runs in an isolated sandbox worker |
 | Chat about the kit; budget what-ifs | LLM + deterministic `simulate_budget` tool |
 
@@ -69,7 +69,7 @@ Use it for development only.
 | `OPENROUTER_API_KEY` | – | Required for campaigns, videos, editing, chat |
 | `OPENROUTER_MODEL` | `google/gemini-2.5-flash` | Text model (strategy, content, plan, chat) |
 | `EDITOR_MODEL` | = `OPENROUTER_MODEL` | Video-editing agent |
-| `VIDEO_MODEL` | `x-ai/grok-imagine-video-1.5-lite` | See `GET /api/video-models` (sorted by price) |
+| `VIDEO_MODEL` | `google/veo-3.1` | See `GET /api/video-models` (sorted by price) |
 | `VIDEO_RESOLUTION` / `VIDEO_ASPECT_RATIO` | `480p` / `9:16` | |
 | `WORKER_URL` | `http://localhost:8001` | Compose sets `http://video-worker:8000` |
 | `MEDIA_DIR` | `data/media` | Compose uses the `media` volume |

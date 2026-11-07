@@ -72,7 +72,7 @@ func Load() Config {
 		SeedDir:          env("SEED_DIR", "seed"),
 		MediaDir:         env("MEDIA_DIR", "data/media"),
 		WorkerURL:        env("WORKER_URL", "http://localhost:8001"),
-		VideoModel:       env("VIDEO_MODEL", "x-ai/grok-imagine-video-1.5-lite"),
+		VideoModel:       env("VIDEO_MODEL", "google/veo-3.1"),
 		VideoResolution:  env("VIDEO_RESOLUTION", "480p"),
 		VideoAspectRatio: env("VIDEO_ASPECT_RATIO", "9:16"),
 		VideoPollEvery:   envDuration("VIDEO_POLL_EVERY", 10*time.Second),
