@@ -1,197 +1,63 @@
-import { ApiError, USE_MOCKS, delay, http, readLocal, uid, writeLocal } from "./api";
-import { challengeSchema, verificationSchema } from "./schemas";
+import { z } from "zod";
+import { ApiError, http } from "./api";
+import { getLocale, setLocale, translateError } from "@/i18n";
+import { challengeSchema, sessionSchema, verificationSchema } from "./schemas";
 import type { Challenge, ResetTokenState, Session, TwoFactorMethod, User } from "./schemas";
 
-const SESSION_KEY = "campio:session";
 const CHALLENGE_KEY = "campio:challenge";
-
-const listeners = new Set<() => void>();
-export const onSessionChange = (fn: () => void) => {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
+const listeners=new Set<()=>void>();
+let currentSession:Session|null=null;
+let initialized=false;
+let initialization:Promise<Session|null>|null=null;
+export const onSessionChange=(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};};
+export const getSession=()=>currentSession;
+export const isSessionInitialized=()=>initialized;
+function setSession(value:Session|null){
+ currentSession=value; initialized=true;
+ // Remove insecure credentials left by the original browser demo.
+ if(typeof window!=="undefined"){localStorage.removeItem("campio:token");localStorage.removeItem("campio:session");}
+ if(value?.user.language) setLocale(value.user.language);
+ listeners.forEach(fn=>fn());
+}
+export async function initializeSession(){
+ if(initialized)return currentSession;
+ initialization??=http("/auth/me").then(data=>{const s=sessionSchema.parse(data);setSession(s);return s;}).catch(()=>{setSession(null);return null;}).finally(()=>{initialization=null;});
+ return initialization;
+}
+export function getChallenge():Challenge|null{
+ if(typeof window==="undefined")return null;
+ try{const raw=sessionStorage.getItem(CHALLENGE_KEY);const parsed=challengeSchema.safeParse(raw?JSON.parse(raw):null);return parsed.success?parsed.data:null;}catch{return null;}
+}
+export function setChallenge(value:Challenge|null){if(value)sessionStorage.setItem(CHALLENGE_KEY,JSON.stringify(value));else sessionStorage.removeItem(CHALLENGE_KEY);}
+async function credentials(path:string,input:{email:string;password:string}){
+ const result=challengeSchema.parse(await http(path,{method:"POST",body:JSON.stringify({...input,language:getLocale()})}));
+ setChallenge(result); return result;
+}
+export const authService={
+ signup:(input:{email:string;password:string})=>credentials("/auth/signup",input),
+ login:(input:{email:string;password:string})=>credentials("/auth/login",input),
+ async google():Promise<void>{
+  const result=z.object({url:z.string().url()}).parse(await http("/auth/google",{method:"POST",body:JSON.stringify({language:getLocale()})}));
+  window.location.assign(result.url);
+ },
+ async loadChallenge(id:string){const result=challengeSchema.parse(await http(`/auth/2fa/challenge?id=${encodeURIComponent(id)}`));setChallenge(result);return result;},
+ async setMethod(method:TwoFactorMethod){
+  const challenge=getChallenge();if(!challenge)throw new ApiError(translateError("challenge_expired"),410,"challenge_expired");
+  const updated=challengeSchema.parse(await http("/auth/2fa/method",{method:"POST",body:JSON.stringify({id:challenge.id,method})}));setChallenge(updated);return updated;
+ },
+ async resendCode(){const challenge=getChallenge();if(!challenge)throw new ApiError(translateError("challenge_expired"),410,"challenge_expired");await http("/auth/2fa/resend",{method:"POST",body:JSON.stringify({id:challenge.id})});},
+ async verify2fa(code:string){
+  const challenge=getChallenge();if(!challenge)throw new ApiError(translateError("challenge_expired"),410,"challenge_expired");
+  const result=verificationSchema.parse(await http("/auth/2fa/verify",{method:"POST",body:JSON.stringify({id:challenge.id,code})}));setSession(result.session);setChallenge(null);return result;
+ },
+ async forgotPassword(email:string){await http("/auth/forgot",{method:"POST",body:JSON.stringify({email,language:getLocale()})});},
+ async validateResetToken(token:string|undefined):Promise<ResetTokenState>{return z.enum(["valid","expired","invalid"]).parse(await http(`/auth/reset/validate?token=${encodeURIComponent(token??"")}`));},
+ async resetPassword(token:string,password:string){await http("/auth/reset",{method:"POST",body:JSON.stringify({token,password})});},
+ async logout(){await http("/auth/logout",{method:"POST"});setSession(null);setChallenge(null);},
+ async refresh(){const session=sessionSchema.parse(await http("/auth/refresh",{method:"POST"}));setSession(session);return session;},
+ updateLocalUser(patch:Partial<User>){if(currentSession)setSession({...currentSession,user:{...currentSession.user,...patch}});},
+ async setupTotp(){return z.object({secret:z.string(),otpauthUrl:z.string()}).parse(await http("/auth/2fa/setup",{method:"POST"}));},
+ async disableTotp(code:string){await http("/auth/2fa/disable",{method:"POST",body:JSON.stringify({code})});},
+ async enableTotp(code:string){const result=await http("/auth/2fa/enable",{method:"POST",body:JSON.stringify({code})});return result;},
 };
-const emit = () => listeners.forEach((fn) => fn());
-
-export function getSession(): Session | null {
-  return readLocal<Session | null>(SESSION_KEY, null);
-}
-
-function setSession(s: Session | null) {
-  if (typeof window === "undefined") return;
-  if (s) {
-    writeLocal(SESSION_KEY, s);
-    localStorage.setItem("campio:token", s.token);
-  } else {
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem("campio:token");
-  }
-  emit();
-}
-
-export function getChallenge(): Challenge | null {
-  if (typeof window === "undefined") return null;
-  const raw = sessionStorage.getItem(CHALLENGE_KEY);
-  try {
-    const parsed = challengeSchema.safeParse(raw ? JSON.parse(raw) : null);
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
-function setChallenge(c: Challenge | null) {
-  if (typeof window === "undefined") return;
-  if (c) sessionStorage.setItem(CHALLENGE_KEY, JSON.stringify(c));
-  else sessionStorage.removeItem(CHALLENGE_KEY);
-}
-
-const nameFromEmail = (email: string) => {
-  const base = email.split("@")[0]?.split(/[._-]/)[0] ?? "Prieten";
-  return base.charAt(0).toUpperCase() + base.slice(1);
-};
-
-export const authService = {
-  async signup(input: { email: string; password: string }): Promise<Challenge> {
-    if (!USE_MOCKS) {
-      const c = challengeSchema.parse(
-        await http("/auth/signup", { method: "POST", body: JSON.stringify(input) }),
-      );
-      setChallenge(c);
-      return c;
-    }
-    await delay(900);
-    if (input.email.toLowerCase().startsWith("taken@"))
-      throw new ApiError("Există deja un cont cu acest email.", 409, "email_taken");
-    const c: Challenge = { id: uid("ch"), email: input.email, method: "email", firstSetup: true };
-    setChallenge(c);
-    return c;
-  },
-
-  async login(input: { email: string; password: string }): Promise<Challenge> {
-    if (!USE_MOCKS) {
-      const c = challengeSchema.parse(
-        await http("/auth/login", { method: "POST", body: JSON.stringify(input) }),
-      );
-      setChallenge(c);
-      return c;
-    }
-    await delay(800);
-    if (input.password === "gresit")
-      throw new ApiError("Email sau parolă greșită.", 401, "invalid_credentials");
-    const c: Challenge = { id: uid("ch"), email: input.email, method: "email", firstSetup: false };
-    setChallenge(c);
-    return c;
-  },
-
-  async google(): Promise<Challenge> {
-    if (!USE_MOCKS) {
-      const c = challengeSchema.parse(await http("/auth/google", { method: "POST" }));
-      setChallenge(c);
-      return c;
-    }
-    await delay(700);
-    const c: Challenge = {
-      id: uid("ch"),
-      email: "ana@atelier.ro",
-      method: "email",
-      firstSetup: false,
-    };
-    setChallenge(c);
-    return c;
-  },
-
-  async setMethod(method: TwoFactorMethod): Promise<Challenge> {
-    const c = getChallenge();
-    if (!c) throw new ApiError("Sesiunea de verificare a expirat.", 410);
-    const next = { ...c, method };
-    if (USE_MOCKS) {
-      await delay(300);
-      setChallenge(next);
-      return next;
-    }
-    const updated = challengeSchema.parse(
-      await http("/auth/2fa/method", {
-        method: "POST",
-        body: JSON.stringify({ id: c.id, method }),
-      }),
-    );
-    setChallenge(updated);
-    return updated;
-  },
-
-  async resendCode(): Promise<void> {
-    if (!USE_MOCKS) return http("/auth/2fa/resend", { method: "POST" });
-    await delay(500);
-  },
-
-  async verify2fa(code: string): Promise<{ session: Session; backupCodes?: string[] }> {
-    const c = getChallenge();
-    if (!USE_MOCKS) {
-      const result = verificationSchema.parse(
-        await http("/auth/2fa/verify", {
-          method: "POST",
-          body: JSON.stringify({ id: c?.id, code }),
-        }),
-      );
-      setSession(result.session);
-      setChallenge(null);
-      return result.backupCodes
-        ? { session: result.session, backupCodes: result.backupCodes }
-        : { session: result.session };
-    }
-    await delay(800);
-    if (!c) throw new ApiError("Sesiunea de verificare a expirat. Autentifică-te din nou.", 410);
-    if (!/^\d{6}$/.test(code) || code === "000000")
-      throw new ApiError("Cod incorect. Mai încearcă o dată.", 401);
-    const user: User = {
-      id: uid("u"),
-      name: nameFromEmail(c.email),
-      email: c.email,
-      businessName: "Atelierul meu",
-      twoFactorEnabled: true,
-    };
-    const session: Session = { token: uid("tok"), user };
-    setSession(session);
-    setChallenge(null);
-    const backupCodes = c.firstSetup
-      ? Array.from(
-          { length: 8 },
-          () =>
-            Math.random().toString(36).slice(2, 7).toUpperCase() +
-            "-" +
-            Math.random().toString(36).slice(2, 7).toUpperCase(),
-        )
-      : undefined;
-    return backupCodes ? { session, backupCodes } : { session };
-  },
-
-  async forgotPassword(email: string): Promise<void> {
-    if (!USE_MOCKS)
-      return http("/auth/forgot", { method: "POST", body: JSON.stringify({ email }) });
-    await delay(800);
-  },
-
-  async validateResetToken(token: string | undefined): Promise<ResetTokenState> {
-    if (!USE_MOCKS) return http(`/auth/reset/validate?token=${encodeURIComponent(token ?? "")}`);
-    await delay(600);
-    if (!token || token === "invalid") return "invalid";
-    if (token === "expired") return "expired";
-    return "valid";
-  },
-
-  async resetPassword(token: string, password: string): Promise<void> {
-    if (!USE_MOCKS)
-      return http("/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) });
-    await delay(900);
-  },
-
-  async logout(): Promise<void> {
-    if (!USE_MOCKS) await http("/auth/logout", { method: "POST" }).catch(() => undefined);
-    setSession(null);
-  },
-
-  updateLocalUser(patch: Partial<User>) {
-    const s = getSession();
-    if (s) setSession({ ...s, user: { ...s.user, ...patch } });
-  },
-};
+if(typeof window!=="undefined")window.addEventListener("campio:session-expired",()=>setSession(null));

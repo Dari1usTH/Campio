@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ export function StepProgress({
 }) {
   const pct = ((current + 1) / steps.length) * 100;
   return (
-    <nav aria-label="Progres" className={cn("w-full", className)}>
+    <nav aria-label={tr("extra.progress")} className={cn("w-full", className)}>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
         <div
           className="h-full rounded-full bg-coral transition-[width] duration-500 ease-out"

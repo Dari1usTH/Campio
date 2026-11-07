@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Check } from "lucide-react";
@@ -64,7 +65,7 @@ export function SelectChip({
   );
 }
 
-export function AiBadge({ className, label = "AI" }: { className?: string; label?: string }) {
+export function AiBadge({ className, label = tr("extra.ai") }: { className?: string; label?: string }) {
   return (
     <span
       className={cn(
@@ -82,7 +83,7 @@ export function AiBadge({ className, label = "AI" }: { className?: string; label
 
 export function ComputedBadge({
   className,
-  label = "Calculat",
+  label = tr("common.computed"),
 }: {
   className?: string;
   label?: string;

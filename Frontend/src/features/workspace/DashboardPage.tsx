@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ import {
 import { toast } from "sonner";
 import { campaignsQuery } from "@/services/queries";
 import { campaignsService } from "@/services/campaigns";
-import { readLocal, writeLocal } from "@/services/api";
+import { onboardingService } from "@/services/settings";
 import { useSession } from "@/hooks/use-session";
 import { useT, fmt, formatMoney } from "@/i18n";
 import { Surface, Eyebrow } from "@/components/campio/Surface";
@@ -35,20 +36,20 @@ export default function DashboardPage() {
   const qc = useQueryClient();
   const query = useQuery(campaignsQuery());
   const [tip, setTip] = useState(0);
-  const [visited, setVisited] = useState<string[]>(() =>
-    readLocal<string[]>("campio:onboarding", []),
-  );
+  const onboarding = useQuery({queryKey:["onboarding"],queryFn:()=>onboardingService.get()});
+  const visited = onboarding.data?.completed ?? [];
   const toggle = useMutation({
     mutationFn: ({ id, ch, act }: { id: string; ch: string; act: string }) =>
       campaignsService.toggleAction(id, ch, act),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["campaigns"] });
+      void qc.invalidateQueries({queryKey:["onboarding"]});
       toast.success(t.workspace.done);
     },
     onError: (e) => toast.error(e.message),
   });
-  if (query.isPending) return <PageLoading />;
-  if (query.isError) return <PageError retry={() => query.refetch()} />;
+  if (query.isPending || onboarding.isPending) return <PageLoading />;
+  if (query.isError || onboarding.isError) return <PageError retry={() => {void query.refetch(); void onboarding.refetch();}} />;
   const list = query.data;
   const actionCampaign = list.find((c) =>
     c.channels.some((ch) => ch.firstActions.some((a) => !a.done)),
@@ -61,12 +62,10 @@ export default function DashboardPage() {
       sum + c.channels.reduce((s, ch) => s + ch.firstActions.filter((a) => a.done).length, 0),
     0,
   );
-  const created = list.filter(
-    (c) => !c.isDemo && !["cana-terra", "sapun-lavanda"].includes(c.id),
-  ).length;
+  const created = list.filter(c=>!c.isDemo).length;
   const currentMonth = new Date().toISOString().slice(0, 7);
   const used = list.filter((c) => !c.isDemo && c.createdAt.startsWith(currentMonth)).length;
-  const activity = readLocal<string[]>("campio:activity", []);
+  const activity = onboarding.data?.activity ?? [];
   const weekStart = new Date();
   weekStart.setHours(0, 0, 0, 0);
   weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
@@ -80,28 +79,23 @@ export default function DashboardPage() {
     created > 0,
     visited.includes("copy"),
     completed > 0,
-    list.some((c) => c.status === "launched" && !["cana-terra", "sapun-lavanda"].includes(c.id)),
+    list.some((c) => c.status === "launched"),
     list.some((c) => c.results?.length),
     visited.includes("rerun"),
   ];
   const onboardingCount = onboardingDone.filter(Boolean).length;
   const currentTip = t.dashboard.tipList[tip]!;
-  const onboardLinks = [
-    "/app/campaigns/demo-lumanare",
-    "/app/new",
-    "/app/campaigns/demo-lumanare#copy",
-    "/app/campaigns/demo-lumanare#budget",
-    "/app/campaigns/demo-lumanare",
-    "/app/campaigns/cana-terra/results",
-    "/app/new?reuse=demo-lumanare",
-  ];
+  const example = list.find(c=>c.isDemo) ?? list[0];
+  const exampleLink = example ? `/app/campaigns/${example.id}` : "/app/new";
+  const resultsExample = list.find(c=>c.results?.length) ?? example;
+  const onboardLinks = [exampleLink,"/app/new",`${exampleLink}#copy`,`${exampleLink}#budget`,exampleLink,resultsExample?`/app/campaigns/${resultsExample.id}/results`:"/app/new",example?`/app/new?reuse=${example.id}`:"/app/new"];
   return (
     <div className="animate-rise">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-2 text-xs text-muted-foreground">{t.workspace.today}</p>
           <h1 className="font-display text-4xl font-semibold tracking-[-.045em] md:text-5xl">
-            {fmt(t.dashboard.hello, { name: session?.user.name ?? "Ana" })}
+            {fmt(t.dashboard.hello, { name: session?.user.name ?? "" })}
             <span
               aria-hidden="true"
               className="ml-2 inline-block origin-bottom-right rotate-12 text-[.7em]"
@@ -221,7 +215,7 @@ export default function DashboardPage() {
             <p className="mt-3 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
               <CountUp value={stat.value} />
               {i === 2 && (
-                <span className="ml-1 text-xs font-normal text-muted-foreground">lei</span>
+                <span className="ml-1 text-xs font-normal text-muted-foreground">{tr("common.lei")}</span>
               )}
             </p>
           </Surface>
@@ -339,9 +333,7 @@ export default function DashboardPage() {
                     href={onboardLinks[i]}
                     onClick={() => {
                       if (i === 0 || i === 6) {
-                        const next = [...visited, i === 0 ? "demo" : "rerun"];
-                        setVisited(next);
-                        writeLocal("campio:onboarding", next);
+                        void onboardingService.mark(i===0?"demo":"rerun").then(()=>qc.invalidateQueries({queryKey:["onboarding"]})).catch(e=>toast.error(e.message));
                       }
                     }}
                     className="group flex min-h-11 items-center gap-3 text-xs"

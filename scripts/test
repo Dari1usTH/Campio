@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+(cd Frontend && npm run typecheck && npm run lint && npm test && npm run build)
+(cd Backend && test -z "$(gofmt -l cmd internal)" && go vet ./... && go test ./... && go build ./...)
+python3 scripts/scan-secrets.py
+if [[ "${E2E:-false}" == true ]]; then ./scripts/smoke; fi

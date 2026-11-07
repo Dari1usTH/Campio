@@ -9,6 +9,13 @@ import (
 )
 
 type Config struct {
+	AppEnv, AppURL, APIURL, SessionSecret, StaticDir, MailDir string
+	GeminiAPIKey, GeminiModel                                 string
+	MockAI, SeedTestUser, AllowTestOTP                        bool
+	TestUserEmail, TestUserPassword, TestUserOTP              string
+	SMTPHost, SMTPPort, SMTPUser, SMTPPassword, SMTPFrom      string
+	GoogleClientID, GoogleClientSecret                        string
+
 	Port             string
 	DatabaseURL      string
 	OpenRouterAPIKey string
@@ -30,12 +37,18 @@ type Config struct {
 
 func Load() Config {
 	return Config{
+		AppEnv: env("APP_ENV", "development"), AppURL: env("APP_URL", "http://localhost:8080"), APIURL: env("API_URL", env("APP_URL", "http://localhost:8080")),
+		SessionSecret: env("SESSION_SECRET", "development-only-change-me-before-production"), StaticDir: env("FRONTEND_DIST", env("STATIC_DIR", "../Frontend/dist")), MailDir: env("MAIL_DIR", "data/mail"),
+		GeminiAPIKey: env("GEMINI_API_KEY", ""), GeminiModel: env("GEMINI_MODEL", "gemini-2.5-flash"), MockAI: envBool("MOCK_AI", false) || (env("GEMINI_API_KEY", "") == "" && env("OPENROUTER_API_KEY", "") == ""),
+		SeedTestUser: envBool("SEED_TEST_USER", false), AllowTestOTP: envBool("ALLOW_TEST_OTP", false), TestUserEmail: env("TEST_USER_EMAIL", "test@campio.app"), TestUserPassword: env("TEST_USER_PASSWORD", ""), TestUserOTP: env("TEST_USER_OTP", "123456"),
+		SMTPHost: env("SMTP_HOST", ""), SMTPPort: env("SMTP_PORT", "587"), SMTPUser: env("SMTP_USER", ""), SMTPPassword: env("SMTP_PASSWORD", ""), SMTPFrom: env("SMTP_FROM", "Campio <noreply@campio.app>"),
+		GoogleClientID: env("GOOGLE_CLIENT_ID", ""), GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
 		Port:             env("PORT", "8080"),
 		DatabaseURL:      env("DATABASE_URL", "postgres://hackathon:hackathon@localhost:5432/hackathon?sslmode=disable"),
 		OpenRouterAPIKey: env("OPENROUTER_API_KEY", ""),
 		OpenRouterModel:  env("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
 		OpenRouterURL:    env("OPENROUTER_URL", "https://openrouter.ai/api/v1"),
-		CORSOrigins:      splitList(env("CORS_ORIGINS", "*")),
+		CORSOrigins:      splitList(env("CORS_ORIGINS", "http://localhost:8080,http://localhost:5173")),
 		ScraperEnabled:   envBool("SCRAPER_ENABLED", true),
 		TrendsEnabled:    envBool("TRENDS_ENABLED", true),
 		CacheTTL:         envDuration("CACHE_TTL", 24*time.Hour),

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ const sectionIcons = [
 
 export function CampaignLoading() {
   return (
-    <div className="space-y-6" role="status" aria-label="Se încarcă campania">
+    <div className="space-y-6" role="status" aria-label={tr("extra.loadingCampaign")}>
       <div className="skeleton-shimmer h-12 w-3/4 rounded-2xl" />
       <div className="skeleton-shimmer h-48 rounded-[2rem]" />
       <div className="grid gap-5 md:grid-cols-2">
@@ -186,7 +187,7 @@ function MessageCard({ message }: { message: MessageVariant }) {
         )}
       </div>
       <div className="my-3 flex justify-center">
-        <ScoreGauge value={message.score} size={130} label="/ 100" highlight={message.isWinner} />
+        <ScoreGauge value={message.score} size={130} label={tr("extra.scoreMaximum")} highlight={message.isWinner} />
       </div>
       <p className="mb-2 min-h-24 font-display text-lg font-semibold leading-snug">
         „{message.text}”
@@ -319,8 +320,7 @@ function CopyAssets({ campaign }: { campaign: Campaign }) {
                 {copy.tiktok.beats.map((beat) => (
                   <li key={beat.from} className="flex gap-3">
                     <span className="mt-0.5 flex h-8 w-16 shrink-0 items-center justify-center rounded-full bg-coral-tint text-xs font-semibold text-coral-ink">
-                      {beat.from}–{beat.to}s
-                    </span>
+                      {beat.from}–{beat.to}{tr("extra.secondsShort")}</span>
                     <div className="min-w-0 border-l-2 border-border pl-4">
                       <p className="text-sm font-semibold">{beat.visual}</p>
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -837,7 +837,7 @@ export function CampaignReport({
                 <div className="grid size-28 place-content-center rounded-full bg-card text-center">
                   <span className="font-display text-2xl font-bold">{campaign.budget}</span>
                   <span className="mt-1 text-xs text-muted-foreground">
-                    lei / {campaign.durationDays} {c.days}
+                    {tr("extra.currencyPer")}{campaign.durationDays} {c.days}
                   </span>
                 </div>
               </div>
@@ -1002,7 +1002,7 @@ export function CampaignReport({
           </DialogHeader>
           <p className="text-xs leading-relaxed text-muted-foreground">{c.sharePrivate}</p>
           <div className="rounded-2xl bg-secondary p-3 text-xs text-muted-foreground">
-            {typeof window !== "undefined" ? window.location.origin : ""}/share/{campaign.id}#…
+            {typeof window !== "undefined" ? window.location.origin : ""}{tr("extra.sharePath")}{campaign.id}#…
           </div>
           <CopyButton text={shareUrl} label={c.shareCopy} variant="default" />
         </DialogContent>

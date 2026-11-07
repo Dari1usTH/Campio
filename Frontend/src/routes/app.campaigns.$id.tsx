@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { lazy, Suspense } from "react";
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 const CampaignResultPage = lazy(() => import("@/features/campaign/CampaignResultPage"));
@@ -11,7 +12,7 @@ function CampaignRoute() {
         <div
           className="skeleton-shimmer h-80 rounded-[2rem]"
           role="status"
-          aria-label="Se încarcă campania"
+          aria-label={tr("extra.loadingCampaign")}
         />
       }
     >

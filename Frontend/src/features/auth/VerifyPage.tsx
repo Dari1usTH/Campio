@@ -31,8 +31,9 @@ export default function VerifyPage() {
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<string[] | null>(null);
   useEffect(() => {
-    setChallenge(getChallenge());
-    setReady(true);
+    const id = new URLSearchParams(window.location.search).get("challenge");
+    if(id) void authService.loadChallenge(id).then(setChallenge).catch(e=>setError(e.message)).finally(()=>setReady(true));
+    else { setChallenge(getChallenge()); setReady(true); }
   }, []);
   useEffect(() => {
     if (timer <= 0) return;
@@ -141,7 +142,7 @@ export default function VerifyPage() {
           <button
             type="button"
             key={m}
-            disabled={busy}
+            disabled={busy || (m === "app" && challenge.firstSetup)}
             onClick={() => method(m)}
             aria-pressed={challenge.method === m}
             className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-2 text-xs font-medium transition ${challenge.method === m ? "bg-card shadow-soft" : "text-muted-foreground"}`}

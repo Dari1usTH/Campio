@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
@@ -20,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useT, formatMoney } from "@/i18n";
+import { useT, formatMoney, getLocale, tr } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { AiBadge, Chip, SelectChip } from "@/components/campio/Chip";
 import { Field, TextArea, TextInput, inputClass } from "@/components/campio/Field";
@@ -57,7 +58,7 @@ const defaultProduct: Product = {
   shortDescription: "",
   strengths: [],
   audience: "",
-  country: "România",
+  country: tr("extra.countryRomania"),
 };
 const defaultDraft: WizardDraft = {
   rawText: "",
@@ -68,6 +69,7 @@ const defaultDraft: WizardDraft = {
   budget: 500,
   tone: "warm",
   durationDays: 30,
+  language: "en",
 };
 const integrationNames: Record<string, string> = {
   meta_ads: "Meta Ads",
@@ -83,7 +85,7 @@ export default function WizardPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { reuse?: string };
   const client = useQueryClient();
-  const [draft, setDraft] = useState<WizardDraft>(defaultDraft);
+  const [draft, setDraft] = useState<WizardDraft>(()=>({...defaultDraft,language:getLocale()}));
   const [raw, setRaw] = useState("");
   const [step, setStep] = useState(0);
   const [parsed, setParsed] = useState(false);
@@ -135,6 +137,7 @@ export default function WizardPage() {
       budget: old.budget,
       tone: old.tone,
       durationDays: old.durationDays,
+      language: getLocale(),
     });
     setRaw(old.product.shortDescription);
     setParsed(true);
@@ -224,7 +227,7 @@ export default function WizardPage() {
     reader.readAsDataURL(file);
   }
   function reset() {
-    setDraft(defaultDraft);
+    setDraft({...defaultDraft,language:getLocale()});
     setRaw("");
     setParsed(false);
     setAiFields([]);
@@ -380,7 +383,7 @@ export default function WizardPage() {
                             min="0"
                             step="0.01"
                             value={draft.product.price ?? ""}
-                            placeholder="89"
+                            placeholder={tr("extra.currency89")}
                             onChange={(e) =>
                               setProduct(
                                 "price",
@@ -396,9 +399,9 @@ export default function WizardPage() {
                             className={inputClass}
                             onChange={(e) => setProduct("currency", e.target.value)}
                           >
-                            <option value="RON">RON · Lei</option>
-                            <option value="EUR">EUR · Euro</option>
-                            <option value="USD">USD · Dolari</option>
+                            <option value="RON">{tr("extra.currencyRON")}</option>
+                            <option value="EUR">{tr("extra.currencyEUR")}</option>
+                            <option value="USD">{tr("extra.currencyUSD")}</option>
                           </select>
                         </Field>
                         <Field
@@ -423,7 +426,7 @@ export default function WizardPage() {
                             id="product-strengths"
                             value={draft.product.strengths.join(",")}
                             onChange={(e) => setProduct("strengths", e.target.value.split(","))}
-                            placeholder="Lucrat manual, ingrediente naturale"
+                            placeholder={tr("extra.strengthPlaceholder")}
                           />
                           <div className="mt-2 flex flex-wrap gap-2">
                             {draft.product.strengths
@@ -503,8 +506,7 @@ export default function WizardPage() {
                         </span>
                       </h3>
                       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                        {t.wizard.photoHint} · Max. 2 MB
-                      </p>
+                        {t.wizard.photoHint} {tr("extra.photoSize")}</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -555,6 +557,7 @@ export default function WizardPage() {
                           onClick={() => {
                             setDraft((prev) => ({
                               ...prev,
+                              language: !selected && ["emag","trendyol","olx"].includes(id) ? "ro" : prev.language,
                               marketplaces: selected
                                 ? prev.marketplaces.filter((x) => x !== id)
                                 : [...prev.marketplaces, id],
@@ -640,6 +643,15 @@ export default function WizardPage() {
                 </div>
               )}
 
+              {(step === 1 || step === 2 || step === 3) && (
+                <Field id="campaign-language" label={tr("extra.campaignLanguage")} hint={tr("extra.campaignLanguageHint")} className="mt-7">
+                  <select id="campaign-language" className={inputClass} value={draft.language} onChange={e=>setDraft({...draft,language:e.target.value as "en"|"ro"})}>
+                    <option value="en">{tr("extra.languageEnglish")}</option>
+                    <option value="ro">{tr("extra.languageRomanian")}</option>
+                  </select>
+                </Field>
+              )}
+
               {step === 2 && (
                 <div className="mt-7 space-y-8">
                   <fieldset>
@@ -680,7 +692,7 @@ export default function WizardPage() {
                             setError("");
                           }}
                         />
-                        <span className="text-sm font-medium">RON</span>
+                        <span className="text-sm font-medium">{tr("extra.currencyRONShort")}</span>
                       </div>
                     </div>
                     <input
@@ -694,8 +706,8 @@ export default function WizardPage() {
                       className="my-5 h-2 w-full cursor-pointer accent-[var(--coral)]"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>50 lei</span>
-                      <span>20.000 lei</span>
+                      <span>{tr("extra.minimumBudget")}</span>
+                      <span>{tr("extra.maximumBudget")}</span>
                     </div>
                     <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
                       {t.wizard.budgetHint}
@@ -781,7 +793,7 @@ export default function WizardPage() {
                       </div>
                       <div>
                         <dt className="text-xs text-muted-foreground">{t.wizard.duration}</dt>
-                        <dd className="mt-1 font-semibold">{draft.durationDays} zile</dd>
+                        <dd className="mt-1 font-semibold">{draft.durationDays} {tr("workspace.days")}</dd>
                       </div>
                       <div className="col-span-2">
                         <dt className="text-xs text-muted-foreground">{c.channels}</dt>
@@ -946,7 +958,7 @@ function CampaignSummary({ draft }: { draft: WizardDraft }) {
           </div>
           <div className="flex justify-between gap-3 text-sm">
             <dt className="text-muted-foreground">{t.wizard.duration}</dt>
-            <dd className="font-semibold">{draft.durationDays} zile</dd>
+            <dd className="font-semibold">{draft.durationDays} {tr("workspace.days")}</dd>
           </div>
         </dl>
         <div className="mt-5 border-t border-border pt-5">

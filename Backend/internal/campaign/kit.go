@@ -36,6 +36,8 @@ var pipeline = []string{StepIntake, StepMarket, StepStrategy, StepContent, StepP
 // Input is the product brief. The seller only sends Prompt (+ images); every
 // other field is filled by the intake step from the prompt, images and answers.
 type Input struct {
+	Language string `json:"language"`
+
 	Prompt             string      `json:"prompt"`
 	ImageAssetIDs      []uuid.UUID `json:"image_asset_ids"`
 	ProductName        string      `json:"product_name"`
@@ -84,7 +86,7 @@ type IntakeBlock struct {
 }
 
 func (in Input) brief() ai.ProductBrief {
-	return ai.ProductBrief{ProductName: in.ProductName, Keyword: in.Keyword, ProductDescription: in.ProductDescription,
+	return ai.ProductBrief{Language: in.Language, ProductName: in.ProductName, Keyword: in.Keyword, ProductDescription: in.ProductDescription,
 		SalePrice: in.SalePrice, BrandName: in.BrandName, AdBudgetRON: in.AdBudgetRON}
 }
 
@@ -148,6 +150,8 @@ type PlanBlock struct {
 
 // Kit is the full marketing kit returned by the API. Sections are null until their step completes.
 type Kit struct {
+	UIData map[string]any `json:"ui_data"`
+
 	ID        uuid.UUID            `json:"id"`
 	CreatedAt time.Time            `json:"created_at"`
 	UpdatedAt time.Time            `json:"updated_at"`

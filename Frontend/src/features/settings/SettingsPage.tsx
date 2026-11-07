@@ -1,3 +1,4 @@
+import { LanguageSwitch } from "@/components/campio/LanguageSwitch";
 import { settingsCopy } from "./copy";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -33,7 +34,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Field, TextInput, inputClass } from "@/components/campio/Field";
 import { PasswordInput, StrengthMeter } from "@/components/campio/PasswordField";
 import { PageHeader, Surface } from "@/components/campio/Surface";
-import { fmt, useT } from "@/i18n";
+import { fmt, useT, tr } from "@/i18n";
 import { useTheme } from "@/hooks/use-theme";
 import { settingsQuery } from "@/services/queries";
 import { settingsService } from "@/services/settings";
@@ -104,6 +105,14 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [totpSetup, setTotpSetup] = useState<{secret:string;otpauthUrl:string}|null>(null);
+  const [totpOpen,setTotpOpen]=useState(false);
+  const [totpCode,setTotpCode]=useState("");
+  const [totpBusy,setTotpBusy]=useState(false);
+  const [totpError,setTotpError]=useState("");
+  const [disablingTotp,setDisablingTotp]=useState(false);
+  async function beginTotp(enabled:boolean){setTotpError("");setTotpCode("");setDisablingTotp(!enabled);setTotpOpen(true);if(enabled){setTotpBusy(true);try{setTotpSetup(await authService.setupTotp());}catch(e){setTotpError(e instanceof Error?e.message:t.empty.error);}finally{setTotpBusy(false);}}}
+  async function confirmTotp(){setTotpBusy(true);setTotpError("");try{if(disablingTotp)await authService.disableTotp(totpCode);else await authService.enableTotp(totpCode);setTotpOpen(false);setTotpSetup(null);await query.refetch();}catch(e){setTotpError(e instanceof Error?e.message:t.empty.error);}finally{setTotpBusy(false);}}
   const avatarRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
@@ -354,9 +363,7 @@ export default function SettingsPage() {
                       aria-label={t.settings.twofa}
                       disabled={save.isPending}
                       checked={draft.security.twoFactorEnabled}
-                      onCheckedChange={(checked) =>
-                        save.mutate({ security: { ...draft.security, twoFactorEnabled: checked } })
-                      }
+                      onCheckedChange={(checked) => void beginTotp(checked)}
                     />
                   </div>
                 }
@@ -590,15 +597,7 @@ export default function SettingsPage() {
                 sub={settingsCopy.appearanceSub}
                 icon={<Globe2 className="size-5" />}
               />
-              <Field id="language" label={t.settings.language}>
-                <select id="language" value="ro" className={inputClass} onChange={() => {}}>
-                  <option value="ro">{settingsCopy.romanian}</option>
-                  <option value="en" disabled>
-                    {settingsCopy.englishSoon}{" "}
-                  </option>
-                </select>
-              </Field>
-              <p className="mt-3 text-xs text-muted-foreground">{settingsCopy.translationHint} </p>
+              <Field id="language" label={t.settings.language}><LanguageSwitch /></Field>
               <h3 className="mb-4 mt-8 text-sm font-semibold">{t.settings.theme}</h3>
               <div className="grid grid-cols-2 gap-4">
                 {(["light", "dark"] as const).map((value) => (
@@ -761,6 +760,7 @@ export default function SettingsPage() {
           )}
         </Surface>
       </div>
+      <Dialog open={totpOpen} onOpenChange={setTotpOpen}><DialogContent className="w-[calc(100%-2rem)] rounded-[28px]"><DialogTitle>{tr("extra.totpTitle")}</DialogTitle><DialogDescription>{disablingTotp?tr("extra.totpDisableHint"):tr("extra.totpSetupHint")}</DialogDescription>{!disablingTotp&&totpSetup&&<><label className="text-sm">{t.auth.manualKey}<code className="mt-2 block break-all rounded-xl bg-background p-4" data-testid="totp-secret">{totpSetup.secret}</code></label><a href={totpSetup.otpauthUrl} className="text-sm underline">{tr("extra.openAuthenticator")}</a></>}<input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={totpCode} onChange={e=>setTotpCode(e.target.value.replace(/\D/g,""))} aria-label={tr("extra.totpCode")} className={inputClass}/>{totpError&&<p role="alert" className="text-sm text-destructive">{totpError}</p>}<Button disabled={totpBusy||totpCode.length!==6||(!disablingTotp&&!totpSetup)} onClick={()=>void confirmTotp()}>{totpBusy?<LoaderCircle className="animate-spin"/>:null}{t.auth.verify}</Button></DialogContent></Dialog>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="w-[calc(100%-2rem)] rounded-[28px]">
           <DialogTitle>{t.settings.deleteConfirm}</DialogTitle>

@@ -1,7 +1,7 @@
 import candle from "@/assets/candle.jpg";
 import mug from "@/assets/mug.jpg";
 import { computeMessageScore, DEFAULT_BUDGET_RON } from "@/lib/scoring";
-import type { Campaign, Notification, Product } from "./schemas";
+import type { Campaign, Notification, Product } from "@/services/schemas";
 
 const msg = (
   id: string,

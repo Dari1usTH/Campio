@@ -1,3 +1,5 @@
+import { tr } from "@/i18n";
+import { LanguageSwitch } from "@/components/campio/LanguageSwitch";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
@@ -19,10 +21,10 @@ export function LandingNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <nav
-        aria-label="Principal"
+        aria-label={tr("extra.mainNavigation")}
         className="glass mx-auto flex h-16 max-w-6xl items-center justify-between rounded-full border border-border/60 pl-5 pr-2 shadow-soft"
       >
-        <Link to="/" aria-label="Campio, acasă">
+        <Link to="/" aria-label={tr("extra.homeLabel")}>
           <Logo size={28} />
         </Link>
         <ul className="hidden items-center gap-1 lg:flex">
@@ -35,6 +37,7 @@ export function LandingNav() {
           ))}
         </ul>
         <div className="flex items-center gap-1.5">
+          <LanguageSwitch />
           {session ? (
             <Button asChild size="sm">
               <Link to="/app">{t.nav.dashboard} ›</Link>

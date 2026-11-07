@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 type Variant = "full" | "mark" | "mono" | "wordmark";
@@ -91,8 +92,7 @@ export function Logo({ variant = "full", className, size = 32, title = "Campio" 
         className="font-display font-bold leading-none tracking-[-0.06em]"
         style={{ fontSize: size * 0.82 }}
       >
-        campi
-        <RingO mono={mono} />
+        {tr("extra.logoPrefix")}<RingO mono={mono} />
       </span>
     </span>
   );

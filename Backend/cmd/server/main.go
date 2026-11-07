@@ -29,6 +29,10 @@ import (
 func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
 	cfg := config.Load()
+	if cfg.AppEnv == "production" && (len(cfg.SessionSecret) < 32 || cfg.SessionSecret == "development-only-change-me-before-production") {
+		slog.Error("SESSION_SECRET must contain at least 32 characters in production")
+		os.Exit(1)
+	}
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -60,7 +64,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	aiClient := ai.New(cfg.OpenRouterAPIKey, cfg.OpenRouterModel, cfg.OpenRouterURL)
+	aiKey, aiModel, aiURL := cfg.OpenRouterAPIKey, cfg.OpenRouterModel, cfg.OpenRouterURL
+	if cfg.GeminiAPIKey != "" {
+		aiKey = cfg.GeminiAPIKey
+		aiModel = cfg.GeminiModel
+		aiURL = "https://generativelanguage.googleapis.com/v1beta/openai"
+	}
+	aiClient := ai.New(aiKey, aiModel, aiURL)
+	if cfg.MockAI {
+		slog.Warn("MOCK_AI=true: using canned campaign content; no AI generation or live research in demo pipeline")
+	}
 	if !aiClient.Enabled() {
 		slog.Warn("OPENROUTER_API_KEY not set: campaigns, videos, editing and chat are disabled")
 	}
@@ -73,7 +86,7 @@ func main() {
 	campaigns := &campaign.Service{
 		Store: store, Market: mkt, AI: aiClient, Media: mediaStore, Sandbox: sb, SeedKeywords: seedKeywords,
 		Cfg: campaign.Config{
-			VideoModel: cfg.VideoModel, VideoResolution: cfg.VideoResolution, VideoAspectRatio: cfg.VideoAspectRatio,
+			MockAI: cfg.MockAI, VideoModel: cfg.VideoModel, VideoResolution: cfg.VideoResolution, VideoAspectRatio: cfg.VideoAspectRatio,
 			VideoPollEvery: cfg.VideoPollEvery, EditorModel: cfg.EditorModel,
 		},
 	}
@@ -85,6 +98,10 @@ func main() {
 		Media: mediaStore, Sandbox: sb, OpenAPI: backend.OpenAPISpec,
 	}
 
+	if err := srv.SeedTestUser(ctx); err != nil {
+		slog.Error("test seed failed", "err", err)
+		os.Exit(1)
+	}
 	httpSrv := &http.Server{Addr: ":" + cfg.Port, Handler: srv.Router(), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		slog.Info("listening", "addr", httpSrv.Addr, "model", cfg.OpenRouterModel, "video_model", cfg.VideoModel, "worker", cfg.WorkerURL)

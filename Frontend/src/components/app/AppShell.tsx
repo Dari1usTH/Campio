@@ -1,4 +1,6 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { tr } from "@/i18n";
+import { LanguageSwitch } from "@/components/campio/LanguageSwitch";
+import { Link, Outlet, useLocation, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -21,7 +23,7 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useSession } from "@/hooks/use-session";
+import { useSession, useSessionReady } from "@/hooks/use-session";
 import { useTheme } from "@/hooks/use-theme";
 import { authService } from "@/services/auth";
 import { campaignsService } from "@/services/campaigns";
@@ -34,12 +36,13 @@ import { toast } from "sonner";
 export function AppShell() {
   const t = useT();
   const session = useSession();
+  const sessionReady = useSessionReady();
   const { theme, setTheme } = useTheme();
   const path = useLocation({ select: (l) => l.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const qc = useQueryClient();
-  const notifications = useQuery(notificationsQuery());
+  const notifications = useQuery({ ...notificationsQuery(), enabled: sessionReady && !!session });
   const unread = notifications.data?.filter((n) => !n.read).length ?? 0;
   const markRead = useMutation({
     mutationFn: () => campaignsService.markAllRead(),
@@ -55,6 +58,8 @@ export function AppShell() {
   const current = nav.find((n) =>
     n.to === "/app" ? path === "/app" || path === "/app/" : path.startsWith(n.to),
   );
+  if (!sessionReady) return <div className="min-h-dvh animate-pulse bg-background" aria-label={t.common.loading} />;
+  if (!session) return <Navigate to="/login" replace />;
   return (
     <div className={cn("app-layout min-h-dvh", collapsed && "sidebar-collapsed")}>
       <a
@@ -64,7 +69,7 @@ export function AppShell() {
         {t.common.skipToContent}
       </a>
       <aside className="app-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col overflow-y-auto border-r border-border/70 bg-surface px-5 pb-6 pt-8 lg:flex">
-        <Link to="/" aria-label="Campio" className="mb-12 px-3">
+        <Link to="/" aria-label={tr("brand.name")} className="mb-12 px-3">
           <Logo variant={collapsed ? "mark" : "full"} size={34} />
         </Link>
         <Button asChild variant="coral" className="mb-8 w-full shrink-0 shadow-none">
@@ -107,8 +112,7 @@ export function AppShell() {
                 {t.workspace.helpBody}
               </p>
               <Link
-                to="/app/campaigns/$id"
-                params={{ id: "demo-lumanare" }}
+                to="/app/campaigns"
                 className="mt-3 inline-flex items-center gap-2 text-xs font-semibold"
               >
                 {t.landing.heroSecondary}
@@ -143,7 +147,7 @@ export function AppShell() {
             </Link>
             {!collapsed && (
               <div className="sidebar-label min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{session?.user.name ?? "Ana"}</p>
+                <p className="truncate text-sm font-semibold">{session?.user.name ?? ""}</p>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {session?.user.businessName ?? t.workspace.demoMode}
                 </p>
@@ -176,10 +180,11 @@ export function AppShell() {
             </span>
             <span className="hidden text-muted-foreground/40 lg:inline">/</span>
             <span className="hidden text-xs font-medium lg:inline">
-              {session?.user.businessName ?? "Atelierul meu"}
+              {session?.user.businessName ?? ""}
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitch />
             {USE_MOCKS && (
               <span className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground sm:inline-flex">
                 <span className="size-1.5 rounded-full bg-success" />

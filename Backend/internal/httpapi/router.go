@@ -4,7 +4,10 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -38,23 +41,53 @@ type Server struct {
 // Router builds the Gin engine.
 func (s *Server) Router() *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	_ = r.SetTrustedProxies(nil)
+	r.Use(gin.Logger(), gin.Recovery(), func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("X-Frame-Options", "DENY")
+		if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
+		}
+		c.Next()
+	}, s.csrf)
 	r.MaxMultipartMemory = 16 << 20 // larger parts spill to temp files
 
 	cc := cors.Config{
-		AllowMethods:  []string{"GET", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:  []string{"Origin", "Content-Type", "Accept", "Authorization", "Range"},
-		ExposeHeaders: []string{"Content-Length", "Content-Range", "Accept-Ranges"},
-		MaxAge:        12 * time.Hour,
+		AllowCredentials: true,
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "Range"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Range", "Accept-Ranges"},
+		MaxAge:           12 * time.Hour,
 	}
 	if len(s.Cfg.CORSOrigins) == 0 || (len(s.Cfg.CORSOrigins) == 1 && s.Cfg.CORSOrigins[0] == "*") {
-		cc.AllowAllOrigins = true
+		cc.AllowOrigins = []string{s.Cfg.AppURL}
 	} else {
 		cc.AllowOrigins = s.Cfg.CORSOrigins
 	}
 	r.Use(cors.New(cc))
 
+	r.GET("/health", s.health)
 	api := r.Group("/api")
+	auth := api.Group("/auth")
+	auth.Use(rateLimit(80, time.Minute))
+	auth.POST("/signup", rateLimit(10, 10*time.Minute), s.signup)
+	auth.POST("/login", rateLimit(20, 10*time.Minute), s.login)
+	auth.POST("/2fa/method", s.setMethod)
+	auth.GET("/2fa/challenge", s.getChallenge)
+	auth.POST("/2fa/resend", rateLimit(5, 10*time.Minute), s.resend)
+	auth.POST("/2fa/verify", rateLimit(30, 10*time.Minute), s.verify)
+	auth.POST("/forgot", rateLimit(10, 10*time.Minute), s.forgot)
+	auth.GET("/reset/validate", s.validateReset)
+	auth.POST("/reset", rateLimit(10, 10*time.Minute), s.reset)
+	auth.POST("/google", s.googleStart)
+	auth.GET("/google/callback", s.googleCallback)
+	auth.POST("/logout", s.logout)
+	auth.GET("/me", s.authenticate, s.me)
+	auth.POST("/refresh", s.authenticate, s.refresh)
+	auth.POST("/2fa/setup", s.authenticate, s.setupTOTP)
+	auth.POST("/2fa/enable", s.authenticate, s.enableTOTP)
+	auth.POST("/2fa/disable", s.authenticate, s.disableTOTP)
 	api.GET("/health", s.health)
 	api.GET("/openapi.yaml", s.openapi)
 	api.GET("/docs", s.docs)
@@ -64,25 +97,67 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/trends", s.getTrends)
 	api.GET("/video-models", s.videoModels)
 
+	api.Use(s.authenticate)
+	api.GET("/profile", s.profile)
+	api.PATCH("/profile", s.profile)
+	api.GET("/settings", s.settings)
+	api.PATCH("/settings", s.settings)
+	api.POST("/settings/password", rateLimit(10, 10*time.Minute), s.changePassword)
+	api.DELETE("/settings/account", s.deleteAccount)
+	api.POST("/settings/sessions/:id/revoke", s.revokeSession)
+	api.GET("/notifications", s.notifications)
+	api.POST("/notifications/read", s.readNotifications)
+	api.GET("/onboarding", s.onboarding)
+	api.PATCH("/onboarding", s.onboarding)
+	api.POST("/wizard/parse", s.parseProduct)
 	api.POST("/campaigns", s.createCampaign)
 	api.GET("/campaigns", s.listCampaigns)
-	api.GET("/campaigns/:id", s.getCampaign)
-	api.DELETE("/campaigns/:id", s.deleteCampaign)
-	api.POST("/campaigns/:id/answers", s.answerQuestions)
-	api.POST("/campaigns/:id/budget-simulation", s.simulateBudget)
-	api.GET("/campaigns/:id/messages", s.listMessages)
-	api.POST("/campaigns/:id/messages", s.postMessage)
+	api.GET("/campaigns/:id", s.ownership, s.getCampaign)
+	api.PATCH("/campaigns/:id/ui-data", s.ownership, s.patchUIData)
+	api.POST("/campaigns/:id/results", s.ownership, s.results)
+	api.GET("/campaigns/:id/results/analysis", s.ownership, s.resultsAnalysis)
+	api.DELETE("/campaigns/:id", s.ownership, s.deleteCampaign)
+	api.POST("/campaigns/:id/answers", s.ownership, s.answerQuestions)
+	api.POST("/campaigns/:id/budget-simulation", s.ownership, s.simulateBudget)
+	api.GET("/campaigns/:id/messages", s.ownership, s.listMessages)
+	api.POST("/campaigns/:id/messages", s.ownership, s.postMessage)
 
-	api.GET("/campaigns/:id/assets", s.listAssets)
-	api.POST("/campaigns/:id/uploads", s.upload)
-	api.POST("/campaigns/:id/videos", s.generateVideos)
-	api.GET("/campaigns/:id/edits", s.listEdits)
-	api.POST("/campaigns/:id/edits", s.startEdit)
-	api.GET("/assets/:id", s.getAsset)
-	api.GET("/assets/:id/content", s.assetContent)
-	api.GET("/edits/:id", s.getEdit)
+	api.GET("/campaigns/:id/assets", s.ownership, s.listAssets)
+	api.POST("/campaigns/:id/uploads", s.ownership, s.upload)
+	api.POST("/campaigns/:id/videos", s.ownership, s.generateVideos)
+	api.GET("/campaigns/:id/edits", s.ownership, s.listEdits)
+	api.POST("/campaigns/:id/edits", s.ownership, s.startEdit)
+	api.GET("/assets/:id", s.ownership, s.getAsset)
+	api.GET("/assets/:id/content", s.ownership, s.assetContent)
+	api.GET("/edits/:id", s.ownership, s.getEdit)
 
-	r.NoRoute(func(c *gin.Context) { fail(c, http.StatusNotFound, "not_found", "route not found") })
+	r.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") || c.Request.Method != "GET" {
+			fail(c, 404, "not_found", "route not found")
+			return
+		}
+		root, err := filepath.Abs(s.Cfg.StaticDir)
+		if err != nil {
+			fail(c, 404, "not_found", "frontend not built")
+			return
+		}
+		path := filepath.Join(root, filepath.Clean("/"+c.Request.URL.Path))
+		if rel, err := filepath.Rel(root, path); err != nil || strings.HasPrefix(rel, "..") {
+			fail(c, 404, "not_found", "route not found")
+			return
+		}
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			c.File(path)
+			return
+		}
+		index := filepath.Join(root, "index.html")
+		if _, err := os.Stat(index); err != nil {
+			fail(c, 404, "not_found", "frontend not built")
+			return
+		}
+		c.Header("Cache-Control", "no-store")
+		c.File(index)
+	})
 	return r
 }
 
@@ -98,6 +173,7 @@ func fail(c *gin.Context, status int, code, msg string) {
 }
 
 func failErr(c *gin.Context, err error) {
+	slog.Error("request failed", "path", c.FullPath(), "err", err)
 	switch {
 	case errors.Is(err, db.ErrNotFound):
 		fail(c, http.StatusNotFound, "not_found", "resource not found")
@@ -114,9 +190,9 @@ func failErr(c *gin.Context, err error) {
 	case errors.Is(err, context.DeadlineExceeded):
 		fail(c, http.StatusGatewayTimeout, "timeout", err.Error())
 	case strings.HasPrefix(err.Error(), "openrouter"):
-		fail(c, http.StatusBadGateway, "ai_error", err.Error())
+		fail(c, http.StatusBadGateway, "ai_error", "AI provider request failed")
 	default:
-		fail(c, http.StatusInternalServerError, "internal", err.Error())
+		fail(c, http.StatusInternalServerError, "internal", "an internal error occurred")
 	}
 }
 
@@ -136,11 +212,13 @@ func (s *Server) health(c *gin.Context) {
 	defer cancel()
 	dbStatus := "ok"
 	if err := s.Store.Pool.Ping(ctx); err != nil {
-		dbStatus = "error: " + err.Error()
+		dbStatus = "error"
 	}
 	workerStatus := "ok"
-	if err := s.Sandbox.Health(ctx); err != nil {
-		workerStatus = "error: " + err.Error()
+	if !s.Cfg.MockAI && s.Sandbox != nil {
+		if err := s.Sandbox.Health(ctx); err != nil {
+			workerStatus = "unavailable"
+		}
 	}
 	status := http.StatusOK
 	if dbStatus != "ok" {
@@ -151,6 +229,7 @@ func (s *Server) health(c *gin.Context) {
 		"database":        dbStatus,
 		"video_worker":    workerStatus,
 		"ai_configured":   s.AI.Enabled(),
+		"mock_ai":         s.Cfg.MockAI,
 		"ai_model":        s.AI.Model,
 		"video_model":     s.Cfg.VideoModel,
 		"editor_model":    s.Cfg.EditorModel,

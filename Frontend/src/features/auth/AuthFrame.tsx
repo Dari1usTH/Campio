@@ -1,3 +1,4 @@
+import { LanguageSwitch } from "@/components/campio/LanguageSwitch";
 import { authCopy } from "./copy";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
@@ -15,6 +16,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
             <Link to="/" aria-label={authCopy.homeLabel}>
               <Logo size={38} />
             </Link>
+            <LanguageSwitch />
             <Link
               to="/"
               className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground"

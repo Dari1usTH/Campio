@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ export function OtpInput({
   length = 6,
   disabled,
   invalid,
-  labelPrefix = "Cifra",
+  labelPrefix = tr("extra.digit"),
 }: OtpInputProps) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
@@ -44,7 +45,7 @@ export function OtpInput({
   };
 
   return (
-    <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label="Cod de verificare">
+    <div className="flex justify-center gap-2 sm:gap-3" role="group" aria-label={tr("extra.verificationCode")}>
       {digits.map((d, i) => (
         <input
           key={i}

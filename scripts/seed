@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+if [[ -f .env ]]; then set -a; source .env; set +a; fi
+# The command still checks SEED_TEST_USER; it never silently enables a test user.
+if [[ "${1:-}" == --docker ]]; then
+  exec docker compose exec app /app/seed-user
+fi
+cd Backend
+exec go run ./cmd/seed

@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -107,8 +108,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Link
-                to="/app/campaigns/$id"
-                params={{ id: "demo-lumanare" }}
+                to="/app/campaigns"
                 className="inline-flex min-h-11 items-center gap-2 rounded-full px-2 text-sm font-medium underline decoration-border underline-offset-4"
               >
                 {t.landing.heroSecondary}
@@ -162,9 +162,8 @@ export default function LandingPage() {
               <div className="flex items-center justify-between px-2 py-2">
                 <div className="flex items-center gap-2">
                   <span className="grid size-7 place-items-center rounded-full bg-navy text-[10px] text-cream">
-                    r&p
-                  </span>
-                  <span className="text-[10px] font-semibold">riverandpine.studio</span>
+                    {tr("extra.previewMonogram")}</span>
+                  <span className="text-[10px] font-semibold">{tr("extra.previewHandle")}</span>
                 </div>
                 <Instagram className="size-4" />
               </div>
@@ -174,12 +173,12 @@ export default function LandingPage() {
                   width="600"
                   height="600"
                   fetchPriority="high"
-                  alt="Lumânare artizanală River & Pine pe o masă, lângă crenguțe de pin"
+                  alt={tr("extra.candleAlt")}
                   className="aspect-[1/1.07] w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-5 bottom-5 text-cream-soft">
-                  <span className="text-[8px] font-medium tracking-[.2em]">RIVER & PINE</span>
+                  <span className="text-[8px] font-medium tracking-[.2em]">{tr("extra.previewBrand")}</span>
                   <p className="mt-2 font-display text-[26px] font-semibold leading-none sm:text-[34px]">
                     {t.workspace.previewMessage}
                   </p>
@@ -188,7 +187,7 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-between px-2 pt-4 text-[9px] text-muted-foreground">
                 <span>{t.workspace.previewProduct}</span>
-                <span>♡ &nbsp; ↗</span>
+                <span>{tr("extra.socialIcons")}</span>
               </div>
             </div>
             <div className="absolute -right-1 top-[43%] w-[45%] rotate-[7deg] rounded-3xl border border-border/40 bg-card p-4 shadow-float sm:right-0 sm:top-[42%]">
@@ -223,15 +222,15 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-display text-lg font-bold tracking-tight text-foreground/65 sm:gap-x-12 sm:text-2xl">
             <span>
-              eMAG<span className="text-coral">.</span>
+              {tr("extra.previewEmag")}<span className="text-coral">.</span>
             </span>
-            <span className="font-serif font-medium">Etsy</span>
-            <span>trendyol</span>
+            <span className="font-serif font-medium">{tr("wizard.marketplaces.etsy.name")}</span>
+            <span>{tr("extra.previewTrendyol")}</span>
             <span className="font-medium">
-              amazon<span className="text-coral">⌣</span>
+              {tr("extra.previewAmazon")}<span className="text-coral">⌣</span>
             </span>
-            <span className="italic">shopify</span>
-            <span className="font-normal">Instagram</span>
+            <span className="italic">{tr("extra.previewShopify")}</span>
+            <span className="font-normal">{tr("result.tabs.instagram")}</span>
           </div>
         </section>
         <section
@@ -352,7 +351,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <Button asChild className="mt-8">
-              <Link to="/app/campaigns/$id" params={{ id: "demo-lumanare" }}>
+              <Link to="/app/campaigns">
                 {t.landing.heroSecondary}
                 <ArrowUpRight />
               </Link>
@@ -363,10 +362,9 @@ export default function LandingPage() {
             <div className="mt-4 rounded-3xl bg-card p-5 shadow-soft">
               <div className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-full bg-coral-tint font-display text-lg">
-                  I
-                </span>
+                  {tr("extra.previewInitial")}</span>
                 <div>
-                  <p className="text-sm font-semibold">Ioana, 31</p>
+                  <p className="text-sm font-semibold">{tr("extra.previewPerson")}</p>
                   <p className="mt-0.5 text-[9px] tracking-wider text-muted-foreground">
                     {t.workspace.panelLabel}
                   </p>
@@ -428,7 +426,7 @@ export default function LandingPage() {
           className="mx-auto grid max-w-[1200px] scroll-mt-28 gap-8 px-5 pb-20 sm:px-8 md:grid-cols-[.8fr_1.2fr] md:gap-20 md:pb-28"
         >
           <div>
-            <Eyebrow>FAQ</Eyebrow>
+            <Eyebrow>{tr("extra.faq")}</Eyebrow>
             <h2 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">
               {t.landing.faqTitle}
             </h2>
@@ -472,7 +470,7 @@ export default function LandingPage() {
       <footer className="mx-auto max-w-[1200px] px-5 pb-7 pt-14 sm:px-8">
         <div className="flex flex-wrap items-start justify-between gap-8 pb-10">
           <div>
-            <Link to="/" aria-label="Campio">
+            <Link to="/" aria-label={tr("brand.name")}>
               <Logo size={32} />
             </Link>
             <p className="mt-4 max-w-56 text-xs leading-relaxed text-muted-foreground">
@@ -533,7 +531,7 @@ export default function LandingPage() {
         </div>
         <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-6 text-[10px] text-muted-foreground">
           <span>
-            © {new Date().getFullYear()} Campio. {t.landing.rights}
+            © {new Date().getFullYear()} {tr("extra.campioDot")}{t.landing.rights}
           </span>
           <span>{t.brand.tagline}</span>
         </div>

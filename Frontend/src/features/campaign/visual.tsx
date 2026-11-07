@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useState } from "react";
 import { Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -78,7 +79,7 @@ export async function downloadCampaignPng(campaign: Campaign) {
   ctx.fill();
   ctx.fillStyle = "#14213D";
   ctx.font = '600 27px "Inter", sans-serif';
-  ctx.fillText("Comandă acum  →", 98, 1009);
+  ctx.fillText(tr("extra.orderArrow"), 98, 1009);
   if (campaign.product.price !== null) {
     ctx.textAlign = "right";
     ctx.font = '700 37px "Inter Tight", sans-serif';
@@ -115,7 +116,7 @@ export function VisualPreview({ campaign }: { campaign: Campaign }) {
           </div>
         )}
         <span className="absolute left-4 top-4 rounded-xl bg-navy px-4 py-1.5 font-display text-xl font-bold tracking-tight text-cream">
-          campi<span className="text-coral">o</span>
+          {tr("extra.logoPrefix")}<span className="text-coral">{tr("extra.logoEnd")}</span>
         </span>
       </div>
       <div className="p-5 sm:p-7">

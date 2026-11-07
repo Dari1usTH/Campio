@@ -25,6 +25,8 @@ import (
 
 // Config holds video/editing settings.
 type Config struct {
+	MockAI bool
+
 	VideoModel       string
 	VideoResolution  string
 	VideoAspectRatio string
@@ -58,24 +60,40 @@ func (s *Service) Wait() { s.wg.Wait() }
 
 // Create stores a new campaign from the seller's prompt and images and starts
 // the async pipeline. The intake step may pause it with questions.
-func (s *Service) Create(ctx context.Context, prompt string, images []ImageFile) (Kit, error) {
+type CreateOptions struct {
+	UserID uuid.UUID
+	Input  Input
+	UIData map[string]any
+}
+
+func (s *Service) Create(ctx context.Context, prompt string, images []ImageFile, options ...CreateOptions) (Kit, error) {
 	prompt = strings.TrimSpace(prompt)
 	if err := validatePrompt(prompt, images); err != nil {
 		return Kit{}, err
 	}
-	if !s.AI.Enabled() {
+	if !s.AI.Enabled() && !s.Cfg.MockAI {
 		return Kit{}, ai.ErrNotConfigured
 	}
 	now := time.Now().UTC()
 	k := Kit{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Status: StatusRunning, Step: StepIntake,
 		Input: Input{Prompt: prompt}, AIModel: s.AI.Model}
+	var opts CreateOptions
+	if len(options) > 0 {
+		opts = options[0]
+		k.Input = opts.Input
+		k.Input.Prompt = prompt
+		k.UIData = opts.UIData
+	}
+	if k.Input.Language != "ro" {
+		k.Input.Language = "en"
+	}
 	for _, st := range pipeline {
 		k.Steps = append(k.Steps, StepInfo{Step: st, Status: StatusPending})
 	}
 	k.setStep(StepIntake, StatusRunning, 0)
 	k.normalize()
 	b, _ := json.Marshal(k)
-	if err := s.Store.InsertCampaign(ctx, db.CampaignRow{ID: k.ID, CreatedAt: now, Status: k.Status, Step: k.Step, Kit: b}); err != nil {
+	if err := s.Store.InsertCampaign(ctx, db.CampaignRow{ID: k.ID, CreatedAt: now, Status: k.Status, Step: k.Step, Kit: b, UserID: opts.UserID, UIData: opts.UIData}); err != nil {
 		return Kit{}, err
 	}
 	ids, err := s.saveImages(ctx, k.ID, images)
@@ -104,6 +122,11 @@ func (s *Service) start(k Kit) {
 // run executes intake → market → (questions?) → strategy → content → plan.
 // It is called again after the seller answers; finished steps are kept.
 func (s *Service) run(k Kit) {
+	if s.Cfg.MockAI {
+		s.runMock(k)
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Minute)
 	defer cancel()
 	var usage ai.Usage
@@ -145,7 +168,7 @@ func (s *Service) run(k Kit) {
 
 	// 0. intake: understand the prompt, images and answers
 	t0 := begin(StepIntake)
-	res, u, err := s.AI.Intake(ctx, k.Input.Prompt, s.imageURLs(ctx, k.Input.ImageAssetIDs), intakeHistory(k.Intake.Answers), s.SeedKeywords)
+	res, u, err := s.AI.Intake(ctx, k.Input.Prompt+ai.LanguageInstruction(k.Input.Language), s.imageURLs(ctx, k.Input.ImageAssetIDs), intakeHistory(k.Intake.Answers), s.SeedKeywords)
 	usage.Add(u)
 	if err != nil {
 		fail(StepIntake, err)
@@ -291,6 +314,7 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Kit, db.CampaignRow, e
 	if err != nil {
 		return k, row, err
 	}
+	k.UIData = row.UIData
 	k.Cost = analysis.ComputeCost(row.PagesFetched, row.AICostUSD, video, editing, k.Input.AdBudgetRON)
 	return k, row, nil
 }

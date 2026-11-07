@@ -89,6 +89,8 @@ func strategySchema() map[string]any {
 
 // ProductBrief is what the seller tells us about the product.
 type ProductBrief struct {
+	Language string `json:"language"`
+
 	ProductName        string  `json:"product_name"`
 	Keyword            string  `json:"keyword"`
 	ProductDescription string  `json:"product_description,omitempty"`
@@ -105,7 +107,7 @@ func (c *Client) GenerateStrategy(ctx context.Context, p ProductBrief, m analysi
 		"reviews":     selectReviews(snap, 70),
 	}
 	var s Strategy
-	u, err := c.structured(ctx, "strategy", strategySystem, "Date (JSON):\n"+mustJSON(payload), strategySchema(), 5000, &s)
+	u, err := c.structured(ctx, "strategy", strategySystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), strategySchema(), 5000, &s)
 	if err != nil {
 		return s, u, err
 	}
@@ -222,7 +224,7 @@ func (c *Client) GenerateContent(ctx context.Context, p ProductBrief, s Strategy
 		"market": map[string]any{"price_median": m.PriceMedian, "price_p25": m.PriceP25, "price_p75": m.PriceP75, "avg_rating": m.AvgRating, "competitor_count": m.CompetitorCount},
 	}
 	var ct Content
-	u, err := c.structured(ctx, "content", contentSystem, "Date (JSON):\n"+mustJSON(payload), contentSchema(), 7000, &ct)
+	u, err := c.structured(ctx, "content", contentSystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), contentSchema(), 7000, &ct)
 	if err != nil {
 		return ct, u, err
 	}
@@ -329,7 +331,7 @@ func (c *Client) GeneratePlan(ctx context.Context, p ProductBrief, s Strategy, c
 		"ads": ads, "videos": videos, "channel_benchmarks": analysis.Benchmarks,
 	}
 	var pl Plan
-	u, err := c.structured(ctx, "campaign_plan", planSystem, "Date (JSON):\n"+mustJSON(payload), planSchema(), 5000, &pl)
+	u, err := c.structured(ctx, "campaign_plan", planSystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), planSchema(), 5000, &pl)
 	if err != nil {
 		return pl, u, err
 	}
@@ -380,4 +382,12 @@ func selectReviews(snap model.MarketSnapshot, n int) []map[string]any {
 		out = append(out, map[string]any{"rating": r.Rating, "text": truncate(r.Text, 400)})
 	}
 	return out
+}
+
+// LanguageInstruction takes precedence over the legacy Romanian wording.
+func LanguageInstruction(language string) string {
+	if language == "ro" {
+		return "\nMANDATORY: Write all seller-facing text and campaign copy in natural Romanian. Keep machine IDs and image/video generation prompts in English."
+	}
+	return "\nMANDATORY OVERRIDE: Write ALL seller-facing text, product names, questions, strategy, campaign copy, captions and plans in natural ENGLISH, regardless of Romanian instructions above. Keep machine IDs unchanged. Currency remains RON."
 }

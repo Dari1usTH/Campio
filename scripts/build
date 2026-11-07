@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+(cd Frontend && npm ci && npm run build)
+mkdir -p bin
+(cd Backend && CGO_ENABLED=0 go build -trimpath -o ../bin/campio ./cmd/server && CGO_ENABLED=0 go build -trimpath -o ../bin/seed ./cmd/seed)

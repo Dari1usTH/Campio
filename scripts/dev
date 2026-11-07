@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+if [[ -f .env ]]; then set -a; source .env; set +a; fi
+docker compose up -d db mailpit
+export DATABASE_URL="${DEV_DATABASE_URL:-postgres://${POSTGRES_USER:-campio}:${POSTGRES_PASSWORD:-campio-local-only}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-campio}?sslmode=disable}"
+export APP_URL="${DEV_APP_URL:-http://localhost:5173}"
+export CORS_ORIGINS="${DEV_CORS_ORIGINS:-http://localhost:5173}"
+export SMTP_HOST="${DEV_SMTP_HOST:-127.0.0.1}" SMTP_PORT="${SMTP_LOCAL_PORT:-1025}"
+export FRONTEND_DIST="$(pwd)/Frontend/dist" SEED_DIR="$(pwd)/Backend/seed" MEDIA_DIR="$(pwd)/data/media"
+mkdir -p .local bin data/media
+# Compile into a temporary executable and restart when Go sources change.
+(
+  cd Backend
+  previous=''
+  api_pid=''
+  trap '[[ -z "$api_pid" ]] || kill "$api_pid" 2>/dev/null || true' EXIT INT TERM
+  while true; do
+    current=$(find . -type f \( -name '*.go' -o -name '*.sql' -o -name 'go.mod' -o -name 'go.sum' \) -printf '%T@ %p\n' | sort | sha256sum)
+    if [[ "$current" != "$previous" ]]; then
+      if go build -o ../bin/campio-dev ./cmd/server; then
+        [[ -z "$api_pid" ]] || { kill "$api_pid" 2>/dev/null || true; wait "$api_pid" 2>/dev/null || true; }
+        ../bin/campio-dev & api_pid=$!
+        previous="$current"
+      fi
+    fi
+    sleep 2
+  done
+) & backend_watch=$!
+trap 'kill "$backend_watch" "${frontend_pid:-}" 2>/dev/null || true; wait || true' EXIT INT TERM
+(cd Frontend && npm run dev -- --host 127.0.0.1 --port 5173) & frontend_pid=$!
+wait -n "$backend_watch" "$frontend_pid"

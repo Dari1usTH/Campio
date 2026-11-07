@@ -1,0 +1,104 @@
+name: campio
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campio-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-campio}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      APP_ENV: ${APP_ENV:-development}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      API_URL: ${API_URL:-http://localhost:8080/api}
+      DATABASE_URL: postgres://${POSTGRES_USER:-campio}:${POSTGRES_PASSWORD:-campio-local-only}@db:5432/${POSTGRES_DB:-campio}?sslmode=disable
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:5173}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      MOCK_AI: ${MOCK_AI:-false}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
+      OPENROUTER_URL: ${OPENROUTER_URL:-https://openrouter.ai/api/v1}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-Campio <hello@campio.local>}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      SEED_TEST_USER: ${SEED_TEST_USER:-false}
+      TEST_USER_EMAIL: ${TEST_USER_EMAIL:-test@campio.app}
+      TEST_USER_PASSWORD: ${TEST_USER_PASSWORD:-}
+      TEST_USER_OTP: ${TEST_USER_OTP:-123456}
+      ALLOW_TEST_OTP: ${ALLOW_TEST_OTP:-false}
+      FRONTEND_DIST: /app/frontend
+      MEDIA_DIR: /data/media
+      SEED_DIR: /app/seed
+      WORKER_URL: http://video-worker:8000
+      SCRAPER_ENABLED: ${SCRAPER_ENABLED:-false}
+      TRENDS_ENABLED: ${TRENDS_ENABLED:-false}
+      CACHE_TTL: ${CACHE_TTL:-24h}
+      VIDEO_MODEL: ${VIDEO_MODEL:-x-ai/grok-imagine-video-1.5-lite}
+      VIDEO_RESOLUTION: ${VIDEO_RESOLUTION:-480p}
+      VIDEO_ASPECT_RATIO: ${VIDEO_ASPECT_RATIO:-9:16}
+      EDITOR_MODEL: ${EDITOR_MODEL:-}
+    volumes:
+      - media:/data/media
+    networks: [backend, sandbox]
+
+  # Development mail inbox. SMTP is private; the web inbox binds localhost only.
+  mailpit:
+    image: axllent/mailpit:v1.29
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+      - "127.0.0.1:${SMTP_LOCAL_PORT:-1025}:1025"
+    networks: [backend]
+
+  # Optional existing video editor; enable with --profile video.
+  video-worker:
+    profiles: [video]
+    build: ./Backend/worker
+    restart: unless-stopped
+    networks: [sandbox]
+    read_only: true
+    tmpfs: [/tmp:size=2g,mode=1777]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    environment:
+      CONCURRENCY: "2"
+      MAX_TIMEOUT_S: "300"
+
+networks:
+  backend: {}
+  sandbox:
+    internal: true
+volumes:
+  pgdata:
+  media:

@@ -184,6 +184,7 @@ export const wizardDraftSchema = z.object({
   budget: z.number().min(50).max(20000),
   tone: toneSchema,
   durationDays: z.number(),
+  language: z.enum(["en", "ro"]).default("en"),
 });
 export type WizardDraft = z.infer<typeof wizardDraftSchema>;
 
@@ -206,6 +207,7 @@ export const userSchema = z.object({
   businessName: z.string(),
   avatarUrl: z.string().optional(),
   twoFactorEnabled: z.boolean(),
+  language: z.enum(["en", "ro"]).default("en"),
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -221,6 +223,8 @@ export interface Challenge {
   email: string;
   method: TwoFactorMethod;
   firstSetup: boolean;
+  totpSecret?: string | undefined;
+  otpauthUrl?: string | undefined;
 }
 
 export type ResetTokenState = "valid" | "expired" | "invalid";
@@ -242,7 +246,7 @@ export interface ResultsAnalysis {
 }
 
 export interface Settings {
-  profile: { name: string; businessName: string; email: string; avatarUrl?: string };
+  profile: { name: string; businessName: string; email: string; avatarUrl?: string | undefined };
   security: {
     twoFactorEnabled: boolean;
     sessions: {
@@ -256,7 +260,7 @@ export interface Settings {
   integrations: Record<string, "connected" | "available" | "soon">;
   notifications: { resultsReminder: boolean; weeklyDigest: boolean; productNews: boolean };
   language: "ro" | "en";
-  brandKit: { colors: string[]; tone: Tone; logoUrl?: string };
+  brandKit: { colors: string[]; tone: Tone; logoUrl?: string | undefined };
 }
 
 /* Runtime validation at the authentication API boundary. No credentials are verified in the UI. */
@@ -265,9 +269,27 @@ export const challengeSchema = z.object({
   email: z.string().email(),
   method: z.enum(["email", "app"]),
   firstSetup: z.boolean(),
+  totpSecret: z.string().optional(),
+  otpauthUrl: z.string().optional(),
 });
 export const sessionSchema = z.object({ token: z.string(), user: userSchema });
 export const verificationSchema = z.object({
   session: sessionSchema,
   backupCodes: z.array(z.string()).optional(),
 });
+
+export const notificationSchema = z.object({ id: z.string(), title: z.string(), body: z.string(), createdAt: z.string(), read: z.boolean(), href: z.string().optional() });
+export const resultsAnalysisSchema = z.object({
+  series: z.array(z.object({ day:z.string(), predicted:z.number(), actual:z.number() })),
+  deltas:z.array(z.object({id:z.string(),label:z.string(),predicted:z.number(),actual:z.number(),unit:z.string()})),
+  suggestions:z.array(z.object({id:z.string(),title:z.string(),body:z.string(),impact:z.enum(["mare","mediu","mic"])})),
+});
+export const settingsSchema = z.object({
+ profile:z.object({name:z.string(),businessName:z.string(),email:z.string().email(),avatarUrl:z.string().optional()}),
+ security:z.object({twoFactorEnabled:z.boolean(),sessions:z.array(z.object({id:z.string(),device:z.string(),location:z.string(),lastActive:z.string(),current:z.boolean()}))}),
+ integrations:z.record(z.enum(["connected","available","soon"])),
+ notifications:z.object({resultsReminder:z.boolean(),weeklyDigest:z.boolean(),productNews:z.boolean()}),
+ language:z.enum(["ro","en"]),
+ brandKit:z.object({colors:z.array(z.string()),tone:toneSchema,logoUrl:z.string().optional()}),
+});
+export const parseResultSchema=z.object({product:productSchema,aiFields:z.array(z.enum(["name","category","price","shortDescription","strengths","audience","country"])),missing:z.array(z.enum(["name","category","price","shortDescription","strengths","audience","country"]))});

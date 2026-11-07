@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { seedCampaigns } from "@/services/mock-data";
+import { seedCampaigns } from "@/test/fixtures/campaigns";
 import { makeShareUrl, readSharedCampaign } from "./share";
 
 afterEach(() => window.history.replaceState(null, "", "/"));

@@ -1,3 +1,4 @@
+import { onboardingService } from "@/services/settings";
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -29,13 +30,7 @@ export function CopyButton({
       toast.error(t.common.copyError);
       return;
     }
-    try {
-      const visited: string[] = JSON.parse(localStorage.getItem("campio:onboarding") ?? "[]");
-      if (!visited.includes("copy"))
-        localStorage.setItem("campio:onboarding", JSON.stringify([...visited, "copy"]));
-    } catch {
-      /* Progress persistence must not invalidate a successful clipboard write. */
-    }
+    void onboardingService.mark("copy").catch(()=>undefined);
     setCopied(true);
     toast.success(t.common.copied);
     onCopied?.();

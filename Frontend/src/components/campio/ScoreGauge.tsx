@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { CountUp } from "./CountUp";
@@ -50,7 +51,7 @@ export function ScoreGauge({
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={max}
-      aria-label={label ?? "Scor"}
+      aria-label={label ?? tr("extra.score")}
     >
       <svg viewBox="0 0 100 92" width={size} height={size * 0.92} aria-hidden="true">
         {Array.from({ length: segments }, (_, i) => {
@@ -91,7 +92,7 @@ export function HealthRing({ value, size = 48 }: { value: number; size?: number 
   const c = 2 * Math.PI * r;
   const tone = value >= 80 ? "stroke-success" : value >= 60 ? "stroke-coral" : "stroke-warning";
   return (
-    <div className="relative inline-flex" style={{ width: size, height: size }} role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label="Sănătate campanie">
+    <div className="relative inline-flex" style={{ width: size, height: size }} role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label={tr("extra.campaignHealth")}>
       <svg viewBox="0 0 44 44" width={size} height={size} className="-rotate-90" aria-hidden="true">
         <circle cx="22" cy="22" r={r} fill="none" strokeWidth="5" className="stroke-muted" />
         <circle

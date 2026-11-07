@@ -16,6 +16,9 @@ import (
 
 // CampaignRow is a stored campaign.
 type CampaignRow struct {
+	UserID uuid.UUID
+	UIData map[string]any
+
 	ID           uuid.UUID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -43,8 +46,8 @@ type CampaignSummary struct {
 
 // InsertCampaign creates a campaign row.
 func (s *Store) InsertCampaign(ctx context.Context, r CampaignRow) error {
-	_, err := s.Pool.Exec(ctx, `INSERT INTO campaigns (id, created_at, updated_at, status, step, product_name, keyword, kit) VALUES ($1,$2,$2,$3,$4,$5,$6,$7)`,
-		r.ID, r.CreatedAt, r.Status, r.Step, r.ProductName, r.Keyword, []byte(r.Kit))
+	_, err := s.Pool.Exec(ctx, `INSERT INTO campaigns (id, created_at, updated_at, status, step, product_name, keyword, kit,user_id,ui_data) VALUES ($1,$2,$2,$3,$4,$5,$6,$7,$8,$9)`,
+		r.ID, r.CreatedAt, r.Status, r.Step, r.ProductName, r.Keyword, []byte(r.Kit), nullUUID(r.UserID), jsonBytes(r.UIData))
 	return err
 }
 
@@ -93,15 +96,16 @@ func (s *Store) AddCampaignAICost(ctx context.Context, id uuid.UUID, cost float6
 func (s *Store) GetCampaign(ctx context.Context, id uuid.UUID) (CampaignRow, error) {
 	var r CampaignRow
 	var errMsg *string
-	var mb, tb []byte
-	err := s.Pool.QueryRow(ctx, `SELECT id, created_at, updated_at, status, step, error, product_name, keyword, kit, market, trends, ai_cost_usd, pages_fetched FROM campaigns WHERE id=$1`, id).
-		Scan(&r.ID, &r.CreatedAt, &r.UpdatedAt, &r.Status, &r.Step, &errMsg, &r.ProductName, &r.Keyword, &r.Kit, &mb, &tb, &r.AICostUSD, &r.PagesFetched)
+	var mb, tb, ub []byte
+	err := s.Pool.QueryRow(ctx, `SELECT id, created_at, updated_at, status, step, error, product_name, keyword, kit, market, trends, ai_cost_usd, pages_fetched,ui_data FROM campaigns WHERE id=$1`, id).
+		Scan(&r.ID, &r.CreatedAt, &r.UpdatedAt, &r.Status, &r.Step, &errMsg, &r.ProductName, &r.Keyword, &r.Kit, &mb, &tb, &r.AICostUSD, &r.PagesFetched, &ub)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return r, ErrNotFound
 	}
 	if err != nil {
 		return r, err
 	}
+	_ = json.Unmarshal(ub, &r.UIData)
 	if errMsg != nil {
 		r.Error = *errMsg
 	}
@@ -383,4 +387,18 @@ func (s *Store) ListMessages(ctx context.Context, campaignID uuid.UUID) ([]ChatM
 		}
 		return m, err
 	})
+}
+
+func nullUUID(id uuid.UUID) any {
+	if id == uuid.Nil {
+		return nil
+	}
+	return id
+}
+func jsonBytes(v any) []byte {
+	if v == nil {
+		return []byte("{}")
+	}
+	b, _ := json.Marshal(v)
+	return b
 }

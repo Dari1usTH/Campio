@@ -14,12 +14,15 @@ import (
 
 	"github.com/tibi/hackathon/backend/internal/analysis"
 	"github.com/tibi/hackathon/backend/internal/campaign"
+	"github.com/tibi/hackathon/backend/internal/db"
 )
 
 // createCampaign accepts either multipart/form-data (prompt + images[]) or
 // JSON {"prompt": "..."}.
 func (s *Server) createCampaign(c *gin.Context) {
 	var prompt string
+	var language string
+	var uiData map[string]any
 	var images []campaign.ImageFile
 	if strings.HasPrefix(c.ContentType(), "multipart/") {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(campaign.MaxImages*campaign.MaxImageBytes+(1<<20)))
@@ -29,6 +32,7 @@ func (s *Server) createCampaign(c *gin.Context) {
 			return
 		}
 		prompt = strings.Join(form.Value["prompt"], "\n")
+		language = c.PostForm("language")
 		files := append(form.File["images"], form.File["image"]...)
 		if len(files) > campaign.MaxImages {
 			fail(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("at most %d images", campaign.MaxImages))
@@ -50,15 +54,29 @@ func (s *Server) createCampaign(c *gin.Context) {
 		}
 	} else {
 		var req struct {
-			Prompt string `json:"prompt"`
+			Prompt   string         `json:"prompt"`
+			Language string         `json:"language"`
+			UIData   map[string]any `json:"ui_data"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil {
 			fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
 			return
 		}
 		prompt = req.Prompt
+		language = req.Language
+		uiData = req.UIData
 	}
-	k, err := s.Campaigns.Create(c.Request.Context(), prompt, images)
+	if uiData == nil {
+		uiData = map[string]any{}
+	}
+	in := campaign.Input{Language: validLanguage(language)}
+	if product, ok := uiData["product"].(map[string]any); ok {
+		in.ProductName, _ = product["name"].(string)
+		in.ProductDescription, _ = product["shortDescription"].(string)
+		in.SalePrice, _ = product["price"].(float64)
+	}
+	in.AdBudgetRON, _ = uiData["budget"].(float64)
+	k, err := s.Campaigns.Create(c.Request.Context(), prompt, images, campaign.CreateOptions{UserID: currentUser(c).ID, Input: in, UIData: uiData})
 	if err != nil {
 		failErr(c, err)
 		return
@@ -101,12 +119,28 @@ func sniffMime(declared string, f io.ReadSeeker) (string, error) {
 func (s *Server) listCampaigns(c *gin.Context) {
 	limit := atoiDefault(c.Query("limit"), 20, 1, 100)
 	offset := atoiDefault(c.Query("offset"), 0, 0, 1_000_000)
-	items, total, err := s.Store.ListCampaigns(c.Request.Context(), limit, offset)
+	u := currentUser(c)
+	var total int
+	if err := s.Store.Pool.QueryRow(c.Request.Context(), "SELECT count(*) FROM campaigns WHERE user_id=$1", u.ID).Scan(&total); err != nil {
+		failErr(c, err)
+		return
+	}
+	rows, err := s.Store.Pool.Query(c.Request.Context(), "SELECT id,created_at,status,step,product_name,keyword FROM campaigns WHERE user_id=$1 ORDER BY created_at DESC LIMIT $2 OFFSET $3", u.ID, limit, offset)
 	if err != nil {
 		failErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": nonNil(items), "total": total, "limit": limit, "offset": offset})
+	defer rows.Close()
+	items := []db.CampaignSummary{}
+	for rows.Next() {
+		var item db.CampaignSummary
+		if err = rows.Scan(&item.ID, &item.CreatedAt, &item.Status, &item.Step, &item.ProductName, &item.Keyword); err != nil {
+			failErr(c, err)
+			return
+		}
+		items = append(items, item)
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items, "total": total, "limit": limit, "offset": offset})
 }
 
 func (s *Server) getCampaign(c *gin.Context) {

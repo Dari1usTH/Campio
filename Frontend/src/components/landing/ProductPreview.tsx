@@ -1,3 +1,4 @@
+import { tr } from "@/i18n";
 import candle from "@/assets/candle.jpg";
 import { Chip } from "@/components/campio/Chip";
 import { ScoreGauge } from "@/components/campio/ScoreGauge";
@@ -15,29 +16,29 @@ export function ProductPreview() {
             <span className="size-2.5 rounded-full bg-coral" />
             <span className="size-2.5 rounded-full bg-peach" />
             <span className="size-2.5 rounded-full bg-muted" />
-            <span className="ml-3 truncate text-[11px] text-muted-foreground">campio.ro/app/campaigns/lumanare</span>
+            <span className="ml-3 truncate text-[11px] text-muted-foreground">{tr("extra.previewUrl")}</span>
           </div>
           <div className="grid gap-3 p-3 sm:grid-cols-3 md:gap-4 md:p-5">
             <div className="rounded-3xl bg-card p-4 shadow-soft sm:col-span-2">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Ce mesaj funcționează</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{tr("landing.bento.2.t")}</p>
               <div className="mt-2 flex items-end justify-around gap-2">
                 <div className="flex flex-col items-center">
                   <ScoreGauge value={64} size={96} highlight />
-                  <Chip variant="coral" size="sm" className="mt-1">Câștigător</Chip>
+                  <Chip variant="coral" size="sm" className="mt-1">{tr("result.winner")}</Chip>
                 </div>
                 <div className="hidden flex-col items-center opacity-80 sm:flex">
                   <ScoreGauge value={39} size={78} />
-                  <span className="mt-1 text-[11px] text-muted-foreground">Mesaj B</span>
+                  <span className="mt-1 text-[11px] text-muted-foreground">{tr("extra.messageB")}</span>
                 </div>
                 <div className="hidden flex-col items-center opacity-70 md:flex">
                   <ScoreGauge value={34} size={78} />
-                  <span className="mt-1 text-[11px] text-muted-foreground">Mesaj C</span>
+                  <span className="mt-1 text-[11px] text-muted-foreground">{tr("extra.messageC")}</span>
                 </div>
               </div>
             </div>
             <div className="hidden flex-col justify-between rounded-3xl bg-gradient-navy p-4 text-navy-foreground sm:flex">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-navy-foreground/70">Buget</p>
-              <p className="font-display text-3xl font-bold">500 lei</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-navy-foreground/70">{tr("campaigns.budget")}</p>
+              <p className="font-display text-3xl font-bold">{tr("extra.budget500")}</p>
               <div className="flex h-2 overflow-hidden rounded-full">
                 <span className="w-[50%] bg-coral" />
                 <span className="w-[30%] bg-peach" />
@@ -56,13 +57,12 @@ export function ProductPreview() {
             <div className="relative overflow-hidden rounded-2xl">
               <img src={candle} alt="" width={1024} height={1024} className="aspect-square w-full object-cover" />
               <div className="absolute inset-x-2 bottom-2 rounded-xl bg-navy/85 p-2 text-navy-foreground backdrop-blur">
-                <p className="text-[9px] font-semibold leading-tight sm:text-[11px]">Seara ta liniștită începe cu o flacără curată.</p>
-                <span className="mt-1 inline-block rounded-full bg-coral px-2 py-0.5 text-[8px] font-bold text-coral-foreground sm:text-[10px]">Comandă acum</span>
+                <p className="text-[9px] font-semibold leading-tight sm:text-[11px]">{tr("extra.previewMessage")}</p>
+                <span className="mt-1 inline-block rounded-full bg-coral px-2 py-0.5 text-[8px] font-bold text-coral-foreground sm:text-[10px]">{tr("result.order")}</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <PlatformIcon platform="instagram" className="size-3" /> 89 lei · Etsy
-            </div>
+              <PlatformIcon platform="instagram" className="size-3" /> {tr("extra.previewPricePlatform")}</div>
           </div>
         </div>
       </div>
@@ -71,21 +71,20 @@ export function ProductPreview() {
       <div className="absolute -left-1 top-6 hidden animate-float-slow rounded-2xl bg-card p-3 shadow-lift [--r:-4deg] sm:flex sm:items-center sm:gap-3 md:-left-6">
         <span className="grid size-9 place-items-center rounded-xl bg-coral text-coral-foreground"><Trophy className="size-4" /></span>
         <div>
-          <p className="text-xs text-muted-foreground">Runda 2</p>
-          <p className="font-display text-lg font-bold leading-none">64 <span className="text-sm font-medium text-muted-foreground">vs 39</span></p>
+          <p className="text-xs text-muted-foreground">{tr("extra.round2")}</p>
+          <p className="font-display text-lg font-bold leading-none">64 <span className="text-sm font-medium text-muted-foreground">{tr("extra.versus39")}</span></p>
         </div>
       </div>
       <div className="absolute -left-2 bottom-2 hidden max-w-[240px] animate-float rounded-2xl bg-card p-3 shadow-lift [--r:2deg] md:block">
         <div className="flex items-center gap-2">
-          <span className="grid size-7 place-items-center rounded-full bg-peach text-xs font-bold text-navy">I</span>
-          <p className="text-xs font-semibold">Ioana, 31</p>
+          <span className="grid size-7 place-items-center rounded-full bg-peach text-xs font-bold text-navy">{tr("extra.previewInitial")}</span>
+          <p className="text-xs font-semibold">{tr("extra.previewPerson")}</p>
           <MessageCircle className="ml-auto size-3.5 text-muted-foreground" />
         </div>
-        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">„Exact vibe-ul pe care îl caut după o zi lungă.”</p>
+        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{tr("extra.previewQuote")}</p>
       </div>
       <div className="absolute -top-6 right-[8%] hidden animate-float-slow items-center gap-2 rounded-full bg-coral px-4 py-2 font-semibold text-coral-foreground shadow-coral [--r:3deg] sm:flex">
-        <Wallet className="size-4" /> ≈ $0.01 / campanie
-      </div>
+        <Wallet className="size-4" /> {tr("extra.previewCost")}</div>
     </div>
   );
 }

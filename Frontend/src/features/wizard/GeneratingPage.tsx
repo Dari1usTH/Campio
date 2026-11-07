@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Circle, LoaderCircle, Sparkles } from "lucide-react";
-import { useT } from "@/i18n";
+import { useT, tr } from "@/i18n";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/campio/Chip";
@@ -29,6 +29,8 @@ export default function GeneratingPage({ id }: { id: string }) {
     refetchInterval: (query) => (query.state.data?.done ? false : 650),
     retry: 1,
   });
+  const [answers, setAnswers] = useState<Record<string,string>>({});
+  const answer = useMutation({ mutationFn:()=>campaignsService.answerQuestions(id,(generation.data?.questions??[]).map(q=>({question_id:q.id,value:answers[q.id]??"",skip:!q.required&&!answers[q.id]}))),onSuccess:()=>{setAnswers({});void generation.refetch();} });
   const status = generation.data;
   const done = !!status?.done;
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function GeneratingPage({ id }: { id: string }) {
       <p className="mt-4 max-w-lg text-center text-sm leading-relaxed text-muted-foreground sm:text-base">
         {done ? c.finished : c.generationSub}
       </p>
+      {!!status?.questions?.length && <Surface className="mt-7 w-full max-w-xl"><form onSubmit={e=>{e.preventDefault();answer.mutate();}} className="space-y-4"><h2 className="text-xl font-semibold">{tr("extra.moreInformation")}</h2>{status.questions.map(q=><label key={q.id} className="block text-sm"><span>{q.text}</span><input required={q.required} type={q.kind==="number"?"number":"text"} value={answers[q.id]??""} onChange={e=>setAnswers(old=>({...old,[q.id]:e.target.value}))} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-background px-3"/>{q.hint&&<span className="mt-1 block text-xs text-muted-foreground">{q.hint}</span>}</label>)}{answer.error&&<p role="alert" className="text-sm text-destructive">{answer.error.message}</p>}<Button disabled={answer.isPending} type="submit">{t.common.continue}</Button></form></Surface>}
       <div className="mt-9 grid w-full min-w-0 gap-5 md:grid-cols-[1.15fr_1fr]">
         <Surface className="!p-5 sm:!p-7">
           <div className="mb-6 flex items-center justify-between gap-3 text-xs font-semibold">

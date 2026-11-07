@@ -47,7 +47,7 @@ func (s *Service) Chat(ctx context.Context, id uuid.UUID, text string, onDelta f
 	if err != nil {
 		return reply, err
 	}
-	msgs := []ai.Message{{Role: "system", Content: ai.ChatSystem + chatContext(k)}}
+	msgs := []ai.Message{{Role: "system", Content: ai.ChatSystem + ai.LanguageInstruction(k.Input.Language) + chatContext(k)}}
 	for _, m := range history {
 		c := m.Content
 		if m.Role == "assistant" && len(m.Simulations) > 0 {

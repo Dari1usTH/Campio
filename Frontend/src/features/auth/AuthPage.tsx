@@ -54,7 +54,6 @@ export default function AuthPage({ mode }: { mode: "signup" | "login" }) {
     setError(null);
     try {
       await authService.google();
-      await navigate({ to: "/verify-2fa" });
     } catch (e) {
       setError(e instanceof Error ? e.message : t.empty.error);
     } finally {

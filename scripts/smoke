@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# Use a preinstalled Playwright where available; otherwise isolate it locally.
+python_bin="${E2E_PYTHON:-python3}"
+if ! "$python_bin" -c 'import playwright.sync_api' >/dev/null 2>&1; then
+  python3 -m venv .local/playwright
+  .local/playwright/bin/pip install -r tests/e2e/requirements.txt
+  python_bin=.local/playwright/bin/python
+  if ! command -v chromium >/dev/null 2>&1 && [[ -z "${CHROMIUM_PATH:-}" ]]; then
+    "$python_bin" -m playwright install --with-deps chromium
+  fi
+fi
+exec "$python_bin" tests/e2e/smoke.py
