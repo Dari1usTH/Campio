@@ -7,6 +7,7 @@ that an AI editor assembles into finished reels.
 | Step | Who does it |
 |---|---|
 | Market: competitors, prices, reviews, sellers (eMAG scraper) + 5-year trend (Google Trends) | code |
+| Outside eMAG (best effort): Amazon.de search, Reddit discussions (Arctic Shift), BetaList launches | code |
 | Complaints from reviews, 2–3 personas, positioning (complaint → message) | LLM (OpenRouter, structured JSON) |
 | Listing titles and description, 3–5 ads, social posts, image ideas, video concepts with shots | LLM |
 | Channel choice, 4-week calendar, A/B test ideas | LLM |
@@ -73,6 +74,7 @@ Use it for development only.
 | `WORKER_URL` | `http://localhost:8001` | Compose sets `http://video-worker:8000` |
 | `MEDIA_DIR` | `data/media` | Compose uses the `media` volume |
 | `DATABASE_URL`, `PORT`, `CORS_ORIGINS`, `SCRAPER_ENABLED`, `TRENDS_ENABLED`, `CACHE_TTL`, `SEED_DIR` | | as before |
+| `AMAZON_ENABLED`, `AMAZON_DOMAIN`, `REDDIT_ENABLED`, `BETALIST_ENABLED` | `true`, `www.amazon.de` | web sources; each is skipped (not retried) when blocked |
 
 ## Layout
 
@@ -83,6 +85,7 @@ internal/ai            OpenRouter: structured outputs, streaming tool-calling ag
 internal/campaign      async kit pipeline, video jobs (poll/resume), AI editing sessions, uploads, chat
 internal/sandbox       client for the worker          internal/media   file storage
 internal/scraper/emag  eMAG search + product JSON-LD   internal/trends  Google Trends
+internal/scraper/{amazon,reddit,betalist}  web sources, merged by internal/market/web.go
 internal/market        cache → live → seed             internal/db      pgx, migrations, queries
 internal/httpapi       Gin routes                      worker/          Python sandbox (server.py, vidkit.py)
 ```

@@ -60,6 +60,10 @@ services:
       WORKER_URL: http://video-worker:8000
       SCRAPER_ENABLED: ${SCRAPER_ENABLED:-false}
       TRENDS_ENABLED: ${TRENDS_ENABLED:-false}
+      AMAZON_ENABLED: ${AMAZON_ENABLED:-false}
+      AMAZON_DOMAIN: ${AMAZON_DOMAIN:-www.amazon.de}
+      REDDIT_ENABLED: ${REDDIT_ENABLED:-false}
+      BETALIST_ENABLED: ${BETALIST_ENABLED:-false}
       CACHE_TTL: ${CACHE_TTL:-24h}
       VIDEO_MODEL: ${VIDEO_MODEL:-x-ai/grok-imagine-video-1.5-lite}
       VIDEO_RESOLUTION: ${VIDEO_RESOLUTION:-480p}

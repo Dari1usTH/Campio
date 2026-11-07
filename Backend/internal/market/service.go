@@ -1,5 +1,6 @@
 // Package market resolves market data for a keyword: fresh cache, then live
-// scraping, then precollected seed data so a demo never breaks.
+// scraping, then precollected seed data so a demo never breaks. Web sources
+// (Amazon, Reddit, BetaList) are best effort and never fail a campaign.
 package market
 
 import (
@@ -29,6 +30,7 @@ type Service struct {
 	ScraperEnabled bool
 	TrendsEnabled  bool
 	CacheTTL       time.Duration
+	WebSources     WebSources
 
 	mu    sync.Mutex
 	locks map[string]*sync.Mutex

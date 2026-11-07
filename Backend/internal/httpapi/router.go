@@ -95,6 +95,7 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/demo-cases", s.demoCases)
 	api.GET("/market", s.getMarket)
 	api.GET("/trends", s.getTrends)
+	api.GET("/web", s.getWeb)
 	api.GET("/video-models", s.videoModels)
 
 	api.Use(s.authenticate)
@@ -261,12 +262,15 @@ func (s *Server) methodology(c *gin.Context) {
 			"ab_power":                   0.8,
 			"ab_min_detectable_lift_pct": analysis.DefaultMinDetectableLift,
 			"usd_to_ron":                 analysis.USDToRON,
+			"eur_to_ron":                 analysis.EURToRON,
+			"gbp_to_ron":                 analysis.GBPToRON,
 			"scraper_cost_per_page_usd":  analysis.ScraperCostPerPageUSD,
 		},
 		"steps": []string{
 			"Înțelegere (AI): din mesajul liber și pozele vânzătorului se extrag produsul, cuvântul cheie eMAG, descrierea, prețul și bugetul. Ce lipsește se întreabă; prețul și bugetul nu sunt niciodată estimate de AI (opțiunile rapide vin din datele de piață, iar dacă vânzătorul sare peste se folosește prețul median eMAG și un buget implicit).",
 			"Piața: prima pagină de rezultate eMAG (~60 produse) + 8 pagini de produs (vânzător, recenzii) + Google Trends RO pe 5 ani.",
-			"Strategie (AI): nemulțumiri extrase din recenzii, 2-3 persona, poziționare (nemulțumire → mesaj).",
+			"În afara eMAG (best effort, sursele blocate sunt sărite): prima pagină de căutare Amazon.de (prețuri convertite în lei la curs fix), discuții Reddit din 2-3 subreddituri de nișă prin arhiva Arctic Shift (ultimii 3 ani) și produse noi de pe BetaList, filtrate după relevanță.",
+			"Strategie (AI): nemulțumiri extrase din recenzii eMAG și discuții Reddit, 2-3 persona, poziționare (nemulțumire → mesaj).",
 			"Conținut (AI): titluri și descriere de listing, 3-5 reclame, postări social media, idei de imagini, concepte video cu shot-uri.",
 			"Plan (AI + cod): AI-ul propune canalele și procentele; codul normalizează la 100%, împarte bugetul pe 4 săptămâni și estimează afișări = buget/CPM×1000, click-uri = afișări×CTR, comenzi = click-uri×CVR, venit = comenzi×preț.",
 			"Teste A/B (AI + cod): AI-ul propune mesajele A și B; codul calculează eșantionul per variantă (test z pe două proporții, α=0.05, putere 80%, detectăm +30% relativ), costul și numărul de zile la bugetul canalului.",
@@ -304,6 +308,28 @@ func (s *Server) getTrends(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"keyword": ts.Keyword, "geo": ts.Geo, "source": ts.Source, "fetched_at": ts.FetchedAt, "fallback_note": ts.FallbackNote,
 		"stats": analysis.ComputeTrend(ts), "points": nonNil(ts.Points),
+	})
+}
+
+// getWeb returns Amazon, Reddit and BetaList data for an English query.
+// It never fails because of a source: each one reports its own status.
+func (s *Server) getWeb(c *gin.Context) {
+	q := strings.TrimSpace(c.Query("query"))
+	if q == "" {
+		fail(c, http.StatusBadRequest, "invalid_request", "query is required")
+		return
+	}
+	var subs []string
+	if v := c.Query("subreddits"); v != "" {
+		subs = strings.Split(v, ",")
+	}
+	w := s.Market.Web(c.Request.Context(), q, subs)
+	emagMedian, _ := strconv.ParseFloat(c.Query("emag_median"), 64)
+	c.JSON(http.StatusOK, gin.H{
+		"query": w.Query, "subreddits": nonNil(w.Subreddits), "source": w.Source, "fetched_at": w.FetchedAt,
+		"sources": nonNil(w.Sources), "stats": analysis.ComputeWeb(w, emagMedian),
+		"amazon": nonNil(w.Amazon), "discussions": nonNil(w.Discussions),
+		"launches": analysis.RelevantLaunches(w.Launches, w.Query),
 	})
 }
 

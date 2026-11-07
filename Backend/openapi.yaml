@@ -9,11 +9,14 @@ info:
     The backend:
 
     0. **Understands the request**: a vision model reads the prompt and photos and extracts the product name, eMAG search
-       keyword, description, brand, price and ad budget. When something is missing (typically price or budget) the campaign
+       keyword (plus an English term and a few subreddits for the web sources), description, brand, price and ad budget. When something is missing (typically price or budget) the campaign
        pauses in status `needs_input` with **questions** for the seller. The AI never guesses price or budget. Quick answers
        come from market data (eMAG price quartiles), and skipped questions fall back to the eMAG median price and a default budget.
     1. **Understands the market**: scrapes the first eMAG search page (~60 competitors: price, rating,
        reviews) and the 8 most-reviewed product pages (seller and reviews), and reads Google Trends for Romania over 5 years.
+       Outside eMAG, best effort: the first Amazon.de search page (international prices and ratings), Reddit posts and
+       comments from 2–3 niche subreddits picked by the intake (through the Arctic Shift archive), and new products on
+       BetaList. A source that is blocked or down is skipped; `web.sources[]` says what happened to each one.
     2. **Finds the audience**: 2–3 personas (who buys, what motivates them, where they spend time online).
     3. **Chooses the positioning**: turns competitor complaints into messages. If everyone complains about the battery,
        the message becomes "battery tested for 8 hours".
@@ -55,11 +58,11 @@ info:
       most 3 rounds of questions, and usually one or none.
     - Show `intake.answers` as the dialogue history, and `intake.assumptions` as a notice on the kit (defaults used for skipped
       questions).
-    - The `market` / `trend` sections may already be filled while questions are pending, so you can render them behind the card.
+    - The `market` / `trend` / `web` sections may already be filled while questions are pending, so you can render them behind the card.
 
     ### 3. Progress → kit
     - While `status` is `running`, `steps[]` gives each stage's status (`intake` → `market` → `strategy` → `content` → `plan`;
-      `intake` is `waiting` while questions are pending). Sections (`market`, `trend`, `strategy`, `content`, `plan`) are `null`
+      `intake` is `waiting` while questions are pending). Sections (`market`, `trend`, `web`, `strategy`, `content`, `plan`) are `null`
       until their step completes, so **render them progressively**. A full kit takes ~30–90 s with a real model.
     - `input` holds what the AI understood (`product_name`, `keyword`, `sale_price`, `ad_budget_ron`, …). Show it as a
       summary card ("Am înțeles: …").
@@ -68,7 +71,12 @@ info:
       - **Piața**: `market.stats` (price histogram, median vs `input.sale_price` via `market.price_vs_median_pct`,
         `avg_rating`, `top_sellers`), competitors table, `trend.monthly` line chart and `trend.stats.direction`. Show
         `fallback_note` when the data is not live.
-      - **Public**: `strategy.personas` as cards; `strategy.complaints` with quotes.
+      - **În afara eMAG** (`web`, filled by the `market` step): `web.stats.amazon` (Amazon median in lei vs the eMAG median via
+        `emag_vs_amazon_pct`), the `web.amazon` table, `web.discussions` as Reddit quote cards linking to `url`,
+        `web.stats.reddit.subreddits` as a small bar chart, and `web.launches` as "produse noi" cards. Render each source from
+        `web.sources[]`: when `status` is not `ok`, show its `note` (Romanian) instead of an empty table. Amazon is often
+        `blocked`, and that's expected.
+      - **Public**: `strategy.personas` as cards; `strategy.complaints` with quotes (badge from `source`: eMAG reviews / Reddit / both).
       - **Poziționare**: `strategy.positioning` (statement, main message, tone, complaint → message table).
       - **Conținut**: listing (3 title options with copy buttons, description, bullets, keywords), ads grouped by channel
         and persona, social posts, image ideas.
@@ -237,6 +245,33 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TrendsResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/web:
+    get:
+      tags: [Market]
+      summary: Amazon, Reddit and BetaList data for an English query (cache → live, best effort)
+      description: "Never fails because of a source: each one reports its status in `sources[]`. Cached for 24 h per query + subreddits."
+      operationId: getWeb
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, example: laptop stand }
+        - name: subreddits
+          in: query
+          description: "Comma-separated subreddit names without r/ (max 3 used). Without it, Reddit is skipped."
+          schema: { type: string, example: "ergonomics,laptops" }
+        - name: emag_median
+          in: query
+          description: "eMAG median price in lei, to fill `stats.amazon.emag_vs_amazon_pct`."
+          schema: { type: number }
+      responses:
+        "200":
+          description: Web snapshot.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebResponse" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
   /api/campaigns:
@@ -759,12 +794,14 @@ components:
     KitInput:
       type: object
       description: "The product brief: `prompt` and `image_asset_ids` come from the seller; the other fields are what the AI understood (empty / 0 until known)."
-      required: [prompt, image_asset_ids, product_name, keyword, sale_price, ad_budget_ron]
+      required: [prompt, image_asset_ids, product_name, keyword, keyword_en, subreddits, sale_price, ad_budget_ron]
       properties:
         prompt: { type: string }
         image_asset_ids: { type: array, items: { type: string, format: uuid }, description: "Assets (kind upload, role product_image) created from the prompt images." }
         product_name: { type: string }
         keyword: { type: string, description: "eMAG search term used for market data." }
+        keyword_en: { type: string, description: "English search term used for Amazon, Reddit and BetaList." }
+        subreddits: { type: array, maxItems: 3, items: { type: string }, description: "Subreddits searched for discussions (names without r/)." }
         product_description: { type: string, description: "From the prompt, the photos and the answers. The AI only claims what is written here." }
         sale_price: { type: number, description: "Lei incl. VAT; 0 until known." }
         ad_budget_ron: { type: number, description: "Total paid ads budget for the 4-week campaign, lei." }
@@ -952,6 +989,122 @@ components:
         stats: { $ref: "#/components/schemas/TrendStats" }
         monthly: { type: array, items: { $ref: "#/components/schemas/MonthPoint" } }
 
+    WebSourceStatus:
+      type: object
+      required: [name, status, items]
+      properties:
+        name: { type: string, enum: [amazon, reddit, betalist] }
+        status: { type: string, enum: [ok, empty, blocked, error, disabled], description: "blocked = bot challenge or rate limit (skipped, not retried)." }
+        items: { type: integer }
+        note: { type: string, description: "Romanian; show it when status is not ok (or for partial Reddit results)." }
+
+    WebProduct:
+      type: object
+      required: [id, title, url, price, currency, rating, review_count, sponsored, position]
+      properties:
+        id: { type: string, description: "Amazon ASIN." }
+        title: { type: string }
+        url: { type: string, format: uri }
+        image_url: { type: string, format: uri }
+        price: { type: number, description: "In `currency`; 0 when not shown." }
+        currency: { type: string, enum: [RON, EUR, USD, GBP], description: "Amazon shows the visitor's local currency (RON from Romania)." }
+        rating: { type: number }
+        review_count: { type: integer }
+        sponsored: { type: boolean }
+        position: { type: integer }
+
+    Discussion:
+      type: object
+      required: [id, kind, subreddit, text, url, score, num_comments, date]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [post, comment] }
+        subreddit: { type: string }
+        title: { type: string, description: "Posts only." }
+        text: { type: string, description: "Post body (may be empty) or comment text. English, as written." }
+        url: { type: string, format: uri }
+        score: { type: integer }
+        num_comments: { type: integer, description: "Posts only." }
+        date: { type: string, format: date }
+
+    Launch:
+      type: object
+      required: [id, name, tagline, url]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        tagline: { type: string }
+        url: { type: string, format: uri }
+        image_url: { type: string, format: uri }
+
+    AmazonStats:
+      type: object
+      required: [product_count, priced_count, currency, price_min, price_median, price_max, price_median_ron, avg_rating, total_reviews, sponsored_pct, emag_vs_amazon_pct]
+      properties:
+        product_count: { type: integer }
+        priced_count: { type: integer, description: "Products priced in `currency` (the most common one)." }
+        currency: { type: string }
+        price_min: { type: number, description: "In `currency`." }
+        price_median: { type: number }
+        price_max: { type: number }
+        price_median_ron: { type: number, description: "Converted with fixed rates (see /api/methodology)." }
+        avg_rating: { type: number, description: "Weighted by review count." }
+        total_reviews: { type: integer }
+        sponsored_pct: { type: number }
+        emag_vs_amazon_pct: { type: number, description: "eMAG median vs Amazon median in lei, % (+ = eMAG more expensive); 0 when unknown." }
+
+    SubredditStat:
+      type: object
+      required: [name, posts, comments, score]
+      properties:
+        name: { type: string }
+        posts: { type: integer }
+        comments: { type: integer }
+        score: { type: integer }
+
+    RedditStats:
+      type: object
+      required: [post_count, comment_count, total_score, total_replies, last_12_months, last_12_months_pct, subreddits]
+      properties:
+        post_count: { type: integer }
+        comment_count: { type: integer }
+        total_score: { type: integer }
+        total_replies: { type: integer, description: "Sum of num_comments of the matching posts." }
+        last_12_months: { type: integer, description: "Posts + comments from the 12 months before the fetch." }
+        last_12_months_pct: { type: number }
+        first_date: { type: string, format: date }
+        last_date: { type: string, format: date }
+        subreddits: { type: array, items: { $ref: "#/components/schemas/SubredditStat" } }
+
+    LaunchStats:
+      type: object
+      required: [found, relevant]
+      properties:
+        found: { type: integer, description: "Returned by BetaList search (fuzzy)." }
+        relevant: { type: integer, description: "Name or tagline mentions the query." }
+
+    WebStats:
+      type: object
+      required: [amazon, reddit, launches]
+      properties:
+        amazon: { $ref: "#/components/schemas/AmazonStats" }
+        reddit: { $ref: "#/components/schemas/RedditStats" }
+        launches: { $ref: "#/components/schemas/LaunchStats" }
+
+    WebBlock:
+      type: object
+      required: [source, fetched_at, query, subreddits, sources, stats, amazon, discussions, launches]
+      properties:
+        source: { type: string, enum: [live, cache] }
+        fetched_at: { type: string, format: date-time }
+        query: { type: string, description: "English search term." }
+        subreddits: { type: array, items: { type: string } }
+        sources: { type: array, items: { $ref: "#/components/schemas/WebSourceStatus" } }
+        stats: { $ref: "#/components/schemas/WebStats" }
+        amazon: { type: array, description: "Top 10 by reviews.", items: { $ref: "#/components/schemas/WebProduct" } }
+        discussions: { type: array, description: "Top 10 by score.", items: { $ref: "#/components/schemas/Discussion" } }
+        launches: { type: array, description: "Relevant to the query, max 10.", items: { $ref: "#/components/schemas/Launch" } }
+
     Complaint:
       type: object
       required: [theme, mentions, severity, quotes, opportunity]
@@ -959,8 +1112,9 @@ components:
         theme: { type: string }
         mentions: { type: integer }
         severity: { type: string, enum: [low, medium, high] }
-        quotes: { type: array, items: { type: string }, description: "Real fragments from competitor reviews." }
+        quotes: { type: array, items: { type: string }, description: "Real fragments from eMAG reviews or Reddit discussions, in their original language." }
         opportunity: { type: string }
+        source: { type: string, enum: [emag_reviews, reddit, both], description: "Where the complaint was found. Missing on kits created before the web sources existed." }
 
     Persona:
       type: object
@@ -1186,7 +1340,7 @@ components:
 
     Kit:
       type: object
-      required: [id, created_at, updated_at, status, step, steps, input, intake, market, trend, strategy, content, plan, ai_model, cost]
+      required: [id, created_at, updated_at, status, step, steps, input, intake, market, trend, web, strategy, content, plan, ai_model, cost]
       properties:
         id: { type: string, format: uuid }
         created_at: { type: string, format: date-time }
@@ -1199,6 +1353,7 @@ components:
         intake: { $ref: "#/components/schemas/IntakeBlock" }
         market: { oneOf: [{ $ref: "#/components/schemas/MarketBlock" }, { type: "null" }] }
         trend: { oneOf: [{ $ref: "#/components/schemas/TrendBlock" }, { type: "null" }] }
+        web: { oneOf: [{ $ref: "#/components/schemas/WebBlock" }, { type: "null" }], description: "Amazon / Reddit / BetaList. Null until the market step completes (and on kits created before this section existed)." }
         strategy: { oneOf: [{ $ref: "#/components/schemas/Strategy" }, { type: "null" }] }
         content: { oneOf: [{ $ref: "#/components/schemas/Content" }, { type: "null" }] }
         plan: { oneOf: [{ $ref: "#/components/schemas/Plan" }, { type: "null" }] }
@@ -1398,6 +1553,20 @@ components:
         products: { type: array, items: { $ref: "#/components/schemas/Product" } }
         reviews: { type: array, items: { $ref: "#/components/schemas/Review" } }
 
+    WebResponse:
+      type: object
+      required: [query, subreddits, source, fetched_at, sources, stats, amazon, discussions, launches]
+      properties:
+        query: { type: string }
+        subreddits: { type: array, items: { type: string } }
+        source: { type: string, enum: [live, cache] }
+        fetched_at: { type: string, format: date-time }
+        sources: { type: array, items: { $ref: "#/components/schemas/WebSourceStatus" } }
+        stats: { $ref: "#/components/schemas/WebStats" }
+        amazon: { type: array, items: { $ref: "#/components/schemas/WebProduct" } }
+        discussions: { type: array, items: { $ref: "#/components/schemas/Discussion" } }
+        launches: { type: array, description: "Relevant launches only.", items: { $ref: "#/components/schemas/Launch" } }
+
     TrendsResponse:
       type: object
       required: [keyword, geo, source, fetched_at, stats, points]
@@ -1430,6 +1599,8 @@ components:
           image_asset_ids: [5b0e7c1e-6a43-4c55-9a4e-1f0f7d2b9a11]
           product_name: Suport laptop reglabil din aluminiu
           keyword: suport laptop
+          keyword_en: laptop stand
+          subreddits: [ergonomics, laptops]
           product_description: "Suport pliabil din aluminiu pentru laptopuri 10-17 inch, 6 trepte de înălțime, bază lată cu silicon antiderapant, 280 g."
           sale_price: 79
           ad_budget_ron: 2000
@@ -1468,10 +1639,29 @@ components:
           fetched_at: "2026-11-07T08:12:42Z"
           stats: { direction: stable, yoy_change_pct: -6.67, last_12_month_avg: 37.96, prev_12_month_avg: 40.67, peak_month: "01", yearly: [{ year: 2025, value: 40.83 }, { year: 2026, value: 35.98 }] }
           monthly: [{ month: 2026-10, value: 53.75 }, { month: 2026-11, value: 63 }]
+        web:
+          source: live
+          fetched_at: "2026-11-07T11:09:42Z"
+          query: laptop stand
+          subreddits: [ergonomics, laptops]
+          sources:
+            - { name: amazon, status: ok, items: 16 }
+            - { name: reddit, status: ok, items: 50, note: "Căutarea a expirat în r/laptops." }
+            - { name: betalist, status: ok, items: 41 }
+          stats:
+            amazon: {"product_count": 16, "priced_count": 16, "currency": "RON", "price_min": 43.8, "price_median": 88.96, "price_max": 164.48, "price_median_ron": 88.96, "avg_rating": 4.61, "total_reviews": 100554, "sponsored_pct": 0, "emag_vs_amazon_pct": -19.75}
+            reddit: {"post_count": 25, "comment_count": 25, "total_score": 69, "total_replies": 79, "last_12_months": 50, "last_12_months_pct": 100, "first_date": "2026-03-29", "last_date": "2026-10-29", "subreddits": [{"name": "Ergonomics", "posts": 25, "comments": 25, "score": 69}]}
+            launches: {"found": 41, "relevant": 4}
+          amazon:
+            - {"id": "B08G84P8ZX", "title": "Laptop Stand, Notebook Stand, ABS + Silicone Laptop Stand", "url": "https://www.amazon.de/dp/B08G84P8ZX", "price": 54.75, "currency": "RON", "rating": 4.4, "review_count": 17700, "sponsored": false, "position": 8}
+          discussions:
+            - {"id": "1v2193p", "kind": "post", "subreddit": "Ergonomics", "title": "Stop buying expensive chairs to sit badly in a nicer seat", "text": "I've talked to enough people dealing with desk-related pain over the years to notice the same pattern every time. Someone's in pain, they research chairs for we", "url": "https://www.reddit.com/r/Ergonomics/comments/1v2193p/", "score": 7, "num_comments": 5, "date": "2026-07-20"}
+          launches:
+            - {"id": "slidenjoy", "name": "Slidenjoy", "tagline": "World's first accessory tripling your laptop screen with a single USB", "url": "https://betalist.com/startups/slidenjoy"}
         strategy:
           summary: "Piață mare și fragmentată; clienții concurenței se plâng de instabilitate."
           complaints:
-            - { theme: Instabilitate, mentions: 4, severity: high, quotes: ["Instabil, fara deschidere mare"], opportunity: "Bază lată, antiderapantă" }
+            - { theme: Instabilitate, mentions: 4, severity: high, quotes: ["Instabil, fara deschidere mare"], opportunity: "Bază lată, antiderapantă", source: emag_reviews }
           personas:
             - { id: p1, name: "Andrei, programator remote", age_range: "25-35", occupation: programator, description: "Lucrează de acasă 8 ore pe zi.", motivations: [postură], pain_points: ["dureri de gât"], channels: [instagram, tiktok], buying_triggers: ["dureri de spate"], objections: [preț], message_hook: "Gâtul tău îți va mulțumi." }
           positioning:

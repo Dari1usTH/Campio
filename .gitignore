@@ -1,5 +1,6 @@
 .env
 /server
+/Backend/server
 /bin/
 /data/
 node_modules/

@@ -25,7 +25,7 @@ make seed KW="suport laptop" FILE=suport-laptop      # refresh seed data from li
 npx -y @redocly/cli@1.34.3 lint openapi.yaml         # lint the API contract
 ```
 
-Unit tests live only in `internal/analysis` and `internal/ai`; everything else was verified end to end.
+Unit tests live in `internal/analysis`, `internal/ai` and the web scrapers (`internal/scraper/{amazon,betalist,reddit}`, with fixtures); everything else was verified end to end.
 
 ## Architecture
 
@@ -35,6 +35,11 @@ Unit tests live only in `internal/analysis` and `internal/ai`; everything else w
 - `internal/market.Service` resolves data for a keyword in order: live cache in the DB (TTL `CACHE_TTL`), then live scrape (`scraper/emag`, `trends`), then seed rows loaded at startup from `seed/*.json`. This is what keeps the demo from failing.
   - The eMAG selectors are all in `scraper/emag/emag.go`. Search cards use `div.card-item`; product pages are parsed from their JSON-LD block.
   - Trends uses the unofficial `explore` → `widgetdata/multiline` endpoints. For low-volume keywords it retries with the first two words.
+- `market.Service.Web` (`internal/market/web.go`) adds best-effort sources outside eMAG, run in parallel with eMAG and Trends during the market step. It uses the English `input.keyword_en` and the `input.subreddits` picked by the intake. It **never fails a campaign**: each source reports `ok|empty|blocked|error|disabled` in `web.sources[]` with a Romanian note. The result is cached in `web_snapshots` (only when a source returned data) and stored raw in `campaigns.web` for the strategy step.
+  - `scraper/amazon`: one amazon.de search page per query. Amazon shows a bot challenge intermittently; it is detected as `ErrBlocked` and skipped. **Do not add retries, header rotation or other evasion.** Prices come in the visitor's local currency (RON from Romania), so the currency is read from the price text.
+  - `scraper/reddit`: Arctic Shift API. Keyword search requires a subreddit; huge subreddits answer 422 "Timeout"; the rate limit is tight (a few requests per minute), so requests are sequential, max 3 subreddits × (posts + comments), and it stops at the first 429.
+  - `scraper/betalist`: search page. Multi-word queries usually return nothing, so `SearchAny` falls back to the two longest words. Its search is fuzzy, so `analysis.RelevantLaunches` filters the results.
+  - Product Hunt was considered and left out: its site is behind Cloudflare, and the API needs a token and has no text search.
 - `internal/campaign` holds the orchestration. All long work runs in background goroutines (`Service.wg`), and clients poll:
   - `service.go`: `Create(prompt, images)` stores the images as `product_image` uploads and returns 202 immediately. `run` executes the steps intake → market → strategy → content → plan, and saves the partial `Kit` JSON to `campaigns.kit` after each step so the frontend renders progressively. Live fields (status, cost) are filled in by `Get`.
   - `intake.go`: the clarification dialogue. `ai.Intake` (vision) reads the prompt, images and previous answers. `buildQuestions` decides what to ask: essential fields (product, keyword, price, budget) until known or skipped, and the AI's optional questions only in round 1. The run pauses with status `needs_input`. `Answer` (POST `/answers`) appends to `intake.answers`, claims the campaign atomically (`ResumeCampaign`) and re-runs `run`, which skips market if the keyword is unchanged. The seller's answers override the AI, and amounts are parsed by `analysis.ParseAmount`. Skipped price/budget become the eMAG median / `DefaultAdBudgetRON` and are noted in `intake.assumptions`. There are max 3 rounds. An eMAG keyword with no results triggers a keyword question instead of failing.
@@ -59,8 +64,8 @@ Unit tests live only in `internal/analysis` and `internal/ai`; everything else w
 ## Conventions and gotchas
 
 - Changing any API response shape means updating `openapi.yaml`. The external frontend agent relies on it, including the "Frontend guide" in `info.description`. Keep YAML flow-map descriptions quoted, because commas break parsing.
-- Money is RON unless the field ends in `_usd`. Percentages are 0–100.
+- Money is RON unless the field ends in `_usd`. Percentages are 0–100. Exception: `web.amazon[].price` / `web.stats.amazon.price_*` are in their `currency` field; `price_median_ron` uses the fixed rates in `analysis` (`EURToRON`, `GBPToRON`, `USDToRON`).
 - Asset `kind`: `generated` | `edited` | `upload`. Upload `role`: `product_image` | `logo` | `music` | `footage`.
 - Without `OPENROUTER_API_KEY`, the market endpoints still work, but campaigns, videos, edits and chat return 503 `ai_unavailable`.
 - The compose project is named `merita-lansat` on purpose, so it can't collide with another compose project in a folder called `backend`.
-- Testing without a key: point `OPENROUTER_URL` at a local mock that implements `/chat/completions` (with `response_format` json_schema names `intake` / `strategy` / `content` / `campaign_plan`, plus streamed tool calls) and `/videos*`. Set `SCRAPER_ENABLED=false TRENDS_ENABLED=false` to force seed data, and `VIDEO_POLL_EVERY=1s`.
+- Testing without a key: point `OPENROUTER_URL` at a local mock that implements `/chat/completions` (with `response_format` json_schema names `intake` / `strategy` / `content` / `campaign_plan`, plus streamed tool calls) and `/videos*`. Set `SCRAPER_ENABLED=false TRENDS_ENABLED=false` to force seed data, `AMAZON_ENABLED=false REDDIT_ENABLED=false BETALIST_ENABLED=false` to skip the web sources, and `VIDEO_POLL_EVERY=1s`. `GET /api/web?query=…&subreddits=…` exercises the web sources without a key.

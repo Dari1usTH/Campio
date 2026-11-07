@@ -24,6 +24,10 @@ type Config struct {
 	CORSOrigins      []string
 	ScraperEnabled   bool
 	TrendsEnabled    bool
+	AmazonEnabled    bool
+	AmazonDomain     string
+	RedditEnabled    bool
+	BetaListEnabled  bool
 	CacheTTL         time.Duration
 	SeedDir          string
 	MediaDir         string
@@ -51,6 +55,10 @@ func Load() Config {
 		CORSOrigins:      splitList(env("CORS_ORIGINS", "http://localhost:8080,http://localhost:5173")),
 		ScraperEnabled:   envBool("SCRAPER_ENABLED", true),
 		TrendsEnabled:    envBool("TRENDS_ENABLED", true),
+		AmazonEnabled:    envBool("AMAZON_ENABLED", true),
+		AmazonDomain:     env("AMAZON_DOMAIN", "www.amazon.de"),
+		RedditEnabled:    envBool("REDDIT_ENABLED", true),
+		BetaListEnabled:  envBool("BETALIST_ENABLED", true),
 		CacheTTL:         envDuration("CACHE_TTL", 24*time.Hour),
 		SeedDir:          env("SEED_DIR", "seed"),
 		MediaDir:         env("MEDIA_DIR", "data/media"),

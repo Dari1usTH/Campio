@@ -22,7 +22,10 @@ import (
 	"github.com/tibi/hackathon/backend/internal/market"
 	"github.com/tibi/hackathon/backend/internal/media"
 	"github.com/tibi/hackathon/backend/internal/sandbox"
+	"github.com/tibi/hackathon/backend/internal/scraper/amazon"
+	"github.com/tibi/hackathon/backend/internal/scraper/betalist"
 	"github.com/tibi/hackathon/backend/internal/scraper/emag"
+	"github.com/tibi/hackathon/backend/internal/scraper/reddit"
 	"github.com/tibi/hackathon/backend/internal/trends"
 )
 
@@ -80,6 +83,15 @@ func main() {
 	mkt := &market.Service{
 		Store: store, Scraper: emag.New(), Trends: trends.New(),
 		ScraperEnabled: cfg.ScraperEnabled, TrendsEnabled: cfg.TrendsEnabled, CacheTTL: cfg.CacheTTL,
+	}
+	if cfg.AmazonEnabled {
+		mkt.WebSources.Amazon = amazon.New(cfg.AmazonDomain)
+	}
+	if cfg.RedditEnabled {
+		mkt.WebSources.Reddit = reddit.New()
+	}
+	if cfg.BetaListEnabled {
+		mkt.WebSources.BetaList = betalist.New()
 	}
 	mediaStore := &media.Store{Root: cfg.MediaDir}
 	sb := sandbox.New(cfg.WorkerURL)

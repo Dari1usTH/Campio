@@ -125,6 +125,29 @@ func (s *Store) SeedKeywords(ctx context.Context) ([]string, error) {
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
+// ---- web snapshots (Amazon, Reddit, BetaList) ----
+
+// SaveWeb stores a web snapshot under cacheKey.
+func (s *Store) SaveWeb(ctx context.Context, cacheKey string, w model.WebSnapshot) error {
+	b, _ := json.Marshal(w)
+	_, err := s.Pool.Exec(ctx, `INSERT INTO web_snapshots (cache_key, fetched_at, data) VALUES ($1,$2,$3)`, cacheKey, w.FetchedAt, b)
+	return err
+}
+
+// LatestWeb returns the newest web snapshot for cacheKey newer than since.
+func (s *Store) LatestWeb(ctx context.Context, cacheKey string, since time.Time) (model.WebSnapshot, error) {
+	var w model.WebSnapshot
+	var b []byte
+	err := s.Pool.QueryRow(ctx, `SELECT data FROM web_snapshots WHERE cache_key=$1 AND fetched_at >= $2 ORDER BY fetched_at DESC LIMIT 1`, cacheKey, since).Scan(&b)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return w, ErrNotFound
+	}
+	if err != nil {
+		return w, err
+	}
+	return w, json.Unmarshal(b, &w)
+}
+
 // ---- trends ----
 
 // SaveTrend stores a trend series.

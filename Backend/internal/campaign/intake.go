@@ -16,6 +16,7 @@ import (
 
 	"github.com/tibi/hackathon/backend/internal/ai"
 	"github.com/tibi/hackathon/backend/internal/analysis"
+	"github.com/tibi/hackathon/backend/internal/market"
 )
 
 const (
@@ -141,6 +142,10 @@ func applyIntake(k *Kit, r ai.IntakeResult) {
 	in.ProductName = firstNonEmpty(answeredText(ans, ai.FieldProductName), r.ProductName, in.ProductName)
 	in.Keyword = firstNonEmpty(answeredText(ans, ai.FieldKeyword), r.Keyword, in.Keyword, in.ProductName)
 	in.BrandName = firstNonEmpty(answeredText(ans, ai.FieldBrand), r.BrandName, in.BrandName)
+	in.KeywordEN = firstNonEmpty(r.KeywordEN, in.KeywordEN)
+	if subs := market.CleanSubreddits(r.Subreddits); len(subs) > 0 {
+		in.Subreddits = subs
+	}
 	in.ProductDescription = firstNonEmpty(r.ProductDescription, in.ProductDescription)
 	if v, ok := answeredAmount(ans, ai.FieldSalePrice); ok && v > 0 {
 		in.SalePrice = v
@@ -363,6 +368,9 @@ func (s *Service) saveImages(ctx context.Context, id uuid.UUID, images []ImageFi
 func (k *Kit) normalize() {
 	if k.Input.ImageAssetIDs == nil {
 		k.Input.ImageAssetIDs = []uuid.UUID{}
+	}
+	if k.Input.Subreddits == nil {
+		k.Input.Subreddits = []string{}
 	}
 	if k.Intake.Questions == nil {
 		k.Intake.Questions = []Question{}
