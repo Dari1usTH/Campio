@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { campaignsService } from "./campaigns";
 import { settingsService } from "./settings";
+import { billingService } from "./billing";
 import { isAssetActive, isKitActive } from "./kit";
 
 export const campaignKeys = {
@@ -82,6 +83,14 @@ export const analysisQuery = (id: string) =>
   queryOptions({
     queryKey: campaignKeys.analysis(id),
     queryFn: () => campaignsService.analysis(id),
+  });
+
+/** Credit balance; refreshed often because AI work spends it in the background. */
+export const billingQuery = () =>
+  queryOptions({
+    queryKey: ["billing"],
+    queryFn: () => billingService.get(),
+    refetchInterval: 30_000,
   });
 
 export const notificationsQuery = () =>

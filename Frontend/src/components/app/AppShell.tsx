@@ -19,6 +19,7 @@ import {
   X,
   ArrowUpRight,
   CircleHelp,
+  Wallet,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ChatbotWidget } from "@/components/app/ChatbotWidget";
@@ -28,9 +29,10 @@ import { useSession, useSessionReady } from "@/hooks/use-session";
 import { useTheme } from "@/hooks/use-theme";
 import { authService } from "@/services/auth";
 import { campaignsService } from "@/services/campaigns";
-import { notificationsQuery } from "@/services/queries";
+import { billingQuery, notificationsQuery } from "@/services/queries";
+import { formatCredit } from "@/lib/credit";
 import { USE_MOCKS } from "@/services/api";
-import { useT, formatRelative } from "@/i18n";
+import { useT, formatRelative, fmt } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -45,6 +47,12 @@ export function AppShell() {
   const qc = useQueryClient();
   const notifications = useQuery({ ...notificationsQuery(), enabled: sessionReady && !!session });
   const unread = notifications.data?.filter((n) => !n.read).length ?? 0;
+  const billing = useQuery({
+    ...billingQuery(),
+    enabled: sessionReady && !!session,
+  });
+  const creditOut =
+    !!billing.data && !billing.data.unmetered && billing.data.balance_usd <= 0;
   const markRead = useMutation({
     mutationFn: () => campaignsService.markAllRead(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
@@ -185,6 +193,25 @@ export function AppShell() {
             </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {billing.data && (
+              <Link
+                to="/app/settings"
+                search={{ tab: "billing" }}
+                aria-label={fmt(t.billing.chip, {
+                  amount: formatCredit(billing.data.balance_usd),
+                })}
+                title={t.billing.balance}
+                className={cn(
+                  "inline-flex h-10 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold tabular-nums transition hover:bg-background",
+                  creditOut && "border-destructive/50 text-destructive",
+                )}
+              >
+                <Wallet className="size-3.5" />
+                {billing.data.unmetered
+                  ? "∞"
+                  : formatCredit(billing.data.balance_usd)}
+              </Link>
+            )}
             <LanguageSwitch />
             {USE_MOCKS && (
               <span className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground sm:inline-flex">

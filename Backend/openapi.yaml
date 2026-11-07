@@ -127,13 +127,22 @@ info:
     send `Accept: text/event-stream` and read events `token` `{text}`, `simulation` (`BudgetSimulation`), `done` (`ChatReply`)
     and `error` with `fetch()` plus a stream reader.
 
+    ### 6. Credits
+    AI work is prepaid. Every account starts with $3 of credit (`signup_bonus`). Each AI call deducts its real
+    OpenRouter cost × `markup` from the balance as it happens (`usage` rows), and users top up with credit packs
+    (`POST /api/billing/purchase`; no real payment yet, packs are granted immediately while `purchases_enabled`).
+    `GET /api/billing` returns the balance and recent ledger rows; `/api/auth/me` also carries `user.creditUsd`.
+    Paid actions (wizard parse, create campaign, answers, re-analysis, chat, videos, posters, edits) answer
+    402 `insufficient_credits` when the balance is ≤ 0; videos also when the balance is below the request's estimate.
+    Work already running finishes, so a balance can dip slightly below zero. Show a top-up prompt on 402.
+
     ### Media URLs
     `content_url` is relative to the API origin (e.g. `http://localhost:8080` + `/api/assets/{id}/content`). Add `?download=1`
     to force a download.
 
     ## Errors
     `{"error": {"code", "message"}}`. Codes: `invalid_request` (400), `not_found` (404), `not_ready` (409: kit still generating
-    or asset not finished), `not_waiting` (409: answers posted while no questions are pending), `campaign_busy` (409: re-analysis requested while the kit is generating), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
+    or asset not finished), `not_waiting` (409: answers posted while no questions are pending), `campaign_busy` (409: re-analysis requested while the kit is generating), `insufficient_credits` (402: out of credit), `purchases_disabled` (403), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
     `timeout` (504), `internal` (500).
 
     ## CORS
@@ -153,6 +162,8 @@ tags:
     description: Uploads, AI-generated video clips and posters, AI video editing, file streaming.
   - name: Chat
     description: AI chat about a kit, with deterministic budget simulations.
+  - name: Billing
+    description: Prepaid AI credit balance, ledger and credit packs.
 
 paths:
   /api/health:
@@ -338,6 +349,7 @@ paths:
               schema: { $ref: "#/components/schemas/Kit" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
     get:
       tags: [Campaigns]
       summary: List kits (newest first)
@@ -412,6 +424,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
 
   /api/campaigns/{id}/reanalyze:
     parameters:
@@ -444,6 +457,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
 
   /api/campaigns/{id}/budget-simulation:
     parameters:
@@ -557,6 +571,7 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
 
   /api/campaigns/{id}/posters:
     parameters:
@@ -594,6 +609,7 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
 
   /api/campaigns/{id}/edits:
     parameters:
@@ -638,6 +654,7 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
 
   /api/edits/{id}:
     parameters:
@@ -765,6 +782,54 @@ paths:
         "409": { $ref: "#/components/responses/NotReady" }
         "502": { $ref: "#/components/responses/AIError" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
+        "402": { $ref: "#/components/responses/InsufficientCredits" }
+
+  /api/billing:
+    get:
+      tags: [Billing]
+      summary: Credit balance and recent transactions
+      description: "Requires a session. Amounts are USD; `transactions` are newest first (max 50); usage rows are negative."
+      operationId: getBilling
+      responses:
+        "200":
+          description: Balance and ledger.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Billing" }
+        "401":
+          description: "No valid session (session_expired)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/billing/purchase:
+    post:
+      tags: [Billing]
+      summary: Buy a credit pack
+      description: "No payment provider yet: when `purchases_enabled` the pack is credited immediately. Returns the updated billing state."
+      operationId: purchaseCredits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pack_usd]
+              properties:
+                pack_usd: { type: number, description: "One of `packs_usd` from GET /api/billing." }
+            example: { pack_usd: 10 }
+      responses:
+        "200":
+          description: Updated balance and ledger.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Billing" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          description: "Purchases are disabled on this server (purchases_disabled)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
 components:
   parameters:
@@ -806,8 +871,37 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    InsufficientCredits:
+      description: "Credit balance used up (insufficient_credits). Prompt the user to buy credits."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: insufficient_credits, message: "not enough credit; buy more credits to continue" } }
 
   schemas:
+    Billing:
+      type: object
+      required: [balance_usd, markup, packs_usd, purchases_enabled, unmetered, transactions]
+      properties:
+        balance_usd: { type: number, description: "Remaining credit in USD; may be slightly negative after a run finishes." }
+        markup: { type: number, description: "Multiplier applied to the provider's AI cost (1 = at cost)." }
+        packs_usd: { type: array, items: { type: number }, example: [5, 10, 25, 50] }
+        purchases_enabled: { type: boolean }
+        unmetered: { type: boolean, description: "True for internal test accounts, which are never charged." }
+        transactions:
+          type: array
+          items: { $ref: "#/components/schemas/CreditTransaction" }
+    CreditTransaction:
+      type: object
+      required: [id, amount_usd, kind, description, campaign_id, created_at]
+      properties:
+        id: { type: integer }
+        amount_usd: { type: number, description: "Positive for signup bonus and purchases, negative for AI usage." }
+        kind: { type: string, enum: [signup_bonus, purchase, usage] }
+        description: { type: string, example: "Video clip" }
+        campaign_id: { type: [string, "null"], format: uuid }
+        created_at: { type: string, format: date-time }
+
     Error:
       type: object
       required: [error]
@@ -816,7 +910,7 @@ components:
           type: object
           required: [code, message]
           properties:
-            code: { type: string, enum: [invalid_request, not_found, not_ready, not_waiting, no_market_data, ai_unavailable, ai_error, timeout, internal] }
+            code: { type: string, enum: [invalid_request, not_found, not_ready, not_waiting, campaign_busy, insufficient_credits, purchases_disabled, no_market_data, ai_unavailable, ai_error, timeout, internal] }
             message: { type: string }
 
     Health:

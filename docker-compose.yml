@@ -54,6 +54,9 @@ services:
       TEST_USER_PASSWORD: ${TEST_USER_PASSWORD:-}
       TEST_USER_OTP: ${TEST_USER_OTP:-123456}
       ALLOW_TEST_OTP: ${ALLOW_TEST_OTP:-false}
+      CREDIT_MARKUP: ${CREDIT_MARKUP:-1}
+      SIGNUP_CREDIT_USD: ${SIGNUP_CREDIT_USD:-3}
+      FAKE_PURCHASES: ${FAKE_PURCHASES:-true}
       FRONTEND_DIST: /app/frontend
       MEDIA_DIR: /data/media
       SEED_DIR: /app/seed

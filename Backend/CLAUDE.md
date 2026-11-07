@@ -54,7 +54,12 @@ Unit tests live in `internal/analysis`, `internal/ai` and the web scrapers (`int
   - `prompts.go`: all prompts. Seller-facing text is Romanian; the editor prompt and video prompts are English.
 - `internal/db`: pgx with no ORM. Migrations are embedded SQL in `internal/db/migrations`, applied in filename order and tracked in `schema_migrations`. Add a new numbered file rather than editing `001_init.sql`.
   - Interrupted campaigns and edits are marked failed at startup (`FailInterrupted`). Campaigns in `needs_input` are left alone.
-- `internal/httpapi`: Gin routes. Errors always use `{"error":{"code","message"}}`, mapped from sentinel errors in `failErr` (`campaign.ErrInvalid`, `ErrNotReady`, `db.ErrNotFound`, `market.ErrNoData`, `ai.ErrNotConfigured`).
+- **Credits** (`internal/db/credits.go`, `internal/httpapi/billing.go`): AI usage is prepaid from `users.credit_usd`, with a ledger in `credit_transactions`.
+  - The cost writers `UpdateCampaignProgress`, `AddCampaignAICost`, `UpdateAsset` and `UpdateEdit` each lock the row and debit the owner for the cost *increase* × `CREDIT_MARKUP`, inside one transaction. A new cost column must go through `debit` the same way, or it is free. `ChargeUser` covers spend with no campaign (`/wizard/parse`).
+  - The `requireCredit` middleware returns 402 `insufficient_credits` on paid routes when the balance is ≤ 0. `GenerateVideos` also prices the whole request with `CanAfford` before submitting. `is_test` users are never charged.
+  - New accounts get `SIGNUP_CREDIT_USD` (`grantSignupCredit`). `POST /api/billing/purchase` grants packs for free while `FAKE_PURCHASES` is on (no payment provider yet).
+  - DB tests: `TEST_DATABASE_URL=postgres://…/disposable_db go test ./internal/db` (skipped without it).
+- `internal/httpapi`: Gin routes. Errors always use `{"error":{"code","message"}}`, mapped from sentinel errors in `failErr` (`campaign.ErrInvalid`, `ErrNotReady`, `db.ErrNotFound`, `market.ErrNoData`, `ai.ErrNotConfigured`, `db.ErrInsufficientCredits`).
 
 **Video worker** (`worker/`, Python stdlib server + ffmpeg + Pillow):
 - It is stateless. `POST /run` takes the script plus base64 files and returns the files written to `./out/`.

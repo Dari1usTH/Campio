@@ -355,6 +355,7 @@
       "notifications": "Notifications",
       "language": "Language and appearance",
       "brand": "Brand kit",
+      "billing": "Billing",
       "danger": "Delete account"
     },
     "name": "Name",
@@ -690,7 +691,9 @@
     "email_verification_required": "Verify your email before using an authenticator.",
     "reset_expired": "This reset link is invalid or expired. Request a new link.",
     "already_enabled": "Two-step verification is already enabled.",
-    "unknown_error": "Something went wrong. Please try again."
+    "unknown_error": "Something went wrong. Please try again.",
+    "insufficient_credits": "You are out of AI credit. Top up in Settings → Billing to continue.",
+    "purchases_disabled": "Buying credits is not available yet."
   },
   "landingKit": {
     "median": "eMAG median",
@@ -745,5 +748,27 @@
       }
     ],
     "talkHintSignedOut": "Sign up free to chat with the AI about your campaign."
+  },
+  "billing": {
+    "title": "Billing and credits",
+    "sub": "AI work is prepaid. Every analysis, chat reply, poster, clip and edit deducts its cost from your balance.",
+    "balance": "Credit balance",
+    "balanceHint": "New accounts start with $3 of free credit.",
+    "unmetered": "Test account: AI usage is not charged.",
+    "low": "Your balance is used up. Paid AI actions are paused until you top up.",
+    "buyTitle": "Buy credits",
+    "buySub": "Choose a pack. Credit never expires.",
+    "buy": "Add {amount}",
+    "testMode": "Test mode: no payment is taken yet, packs are added instantly.",
+    "disabled": "Buying credits is not available yet.",
+    "bought": "{amount} added to your balance.",
+    "history": "Recent activity",
+    "empty": "No activity yet.",
+    "kind_signup_bonus": "Welcome credit",
+    "kind_purchase": "Credit purchase",
+    "kind_usage": "AI usage",
+    "markup": "Charged at {markup}× the AI provider cost.",
+    "chip": "AI credit: {amount}",
+    "loadError": "Could not load your balance."
   }
 }

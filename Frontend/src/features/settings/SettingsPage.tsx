@@ -26,6 +26,7 @@ import {
   Trash2,
   Upload,
   UserRound,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,9 +43,17 @@ import { authService } from "@/services/auth";
 import { USE_MOCKS } from "@/services/api";
 import type { Settings, Tone } from "@/services/schemas";
 import { cn } from "@/lib/utils";
+import { BillingPanel } from "./BillingPanel";
 
 type Tab =
-  "profile" | "security" | "integrations" | "notifications" | "language" | "brand" | "danger";
+  | "profile"
+  | "security"
+  | "integrations"
+  | "notifications"
+  | "language"
+  | "brand"
+  | "billing"
+  | "danger";
 const tabIcons = {
   profile: UserRound,
   security: Shield,
@@ -52,6 +61,7 @@ const tabIcons = {
   notifications: Bell,
   language: Globe2,
   brand: Palette,
+  billing: Wallet,
   danger: Trash2,
 };
 const passwordSchema = z
@@ -92,14 +102,20 @@ function SettingRow({ title, sub, control }: { title: string; sub: string; contr
   );
 }
 
-export default function SettingsPage() {
+export default function SettingsPage({
+  initialTab,
+}: {
+  initialTab?: string | undefined;
+}) {
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const query = useQuery(settingsQuery());
   const [draft, setDraft] = useState<Settings | null>(null);
-  const [tab, setTab] = useState<Tab>("profile");
+  const [tab, setTab] = useState<Tab>(
+    initialTab && initialTab in tabIcons ? (initialTab as Tab) : "profile",
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -245,6 +261,16 @@ export default function SettingsPage() {
           })}
         </nav>
         <Surface pad="lg" className="min-w-0">
+          {tab === "billing" && (
+            <>
+              <SectionHead
+                title={t.billing.title}
+                sub={t.billing.sub}
+                icon={<Wallet className="size-5" />}
+              />
+              <BillingPanel />
+            </>
+          )}
           {tab === "profile" && (
             <>
               <SectionHead

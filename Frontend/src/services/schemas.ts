@@ -23,8 +23,30 @@ export const userSchema = z.object({
   avatarUrl: z.string().optional(),
   twoFactorEnabled: z.boolean(),
   language: z.enum(["en", "ro"]).default("en"),
+  /** Prepaid AI credit in USD (see /api/billing). */
+  creditUsd: z.number().optional(),
 });
 export type User = z.infer<typeof userSchema>;
+
+/* ---------- Billing (prepaid AI credits, USD) ---------- */
+export const creditTransactionSchema = z.object({
+  id: z.number(),
+  amount_usd: z.number(),
+  kind: z.enum(["signup_bonus", "purchase", "usage"]),
+  description: z.string(),
+  campaign_id: z.string().nullable(),
+  created_at: z.string(),
+});
+export type CreditTransaction = z.infer<typeof creditTransactionSchema>;
+export const billingSchema = z.object({
+  balance_usd: z.number(),
+  markup: z.number(),
+  packs_usd: z.array(z.number()),
+  purchases_enabled: z.boolean(),
+  unmetered: z.boolean(),
+  transactions: z.array(creditTransactionSchema),
+});
+export type Billing = z.infer<typeof billingSchema>;
 
 export interface Session {
   token: string;

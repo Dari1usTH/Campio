@@ -58,9 +58,17 @@ func (s *Store) UpdateCampaignProgress(ctx context.Context, id uuid.UUID, status
 	if errMsg != "" {
 		e = errMsg
 	}
-	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET status=$2, step=$3, error=$4, kit=$5, ai_cost_usd=$6, pages_fetched=$7, updated_at=now() WHERE id=$1`,
-		id, status, step, e, []byte(kit), aiCost, pages)
-	return err
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		owner, old, err := campaignCostTx(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE campaigns SET status=$2, step=$3, error=$4, kit=$5, ai_cost_usd=$6, pages_fetched=$7, updated_at=now() WHERE id=$1`,
+			id, status, step, e, []byte(kit), aiCost, pages); err != nil {
+			return err
+		}
+		return s.debit(ctx, tx, owner, aiCost-old, "Campaign analysis", &id)
+	})
 }
 
 // SetCampaignData stores the raw market data used by the campaign.
@@ -106,8 +114,16 @@ func (s *Store) RestartCampaign(ctx context.Context, id uuid.UUID, kit json.RawM
 
 // AddCampaignAICost adds chat cost to the campaign.
 func (s *Store) AddCampaignAICost(ctx context.Context, id uuid.UUID, cost float64) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET ai_cost_usd = ai_cost_usd + $2 WHERE id=$1`, id, cost)
-	return err
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		owner, _, err := campaignCostTx(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE campaigns SET ai_cost_usd = ai_cost_usd + $2 WHERE id=$1`, id, cost); err != nil {
+			return err
+		}
+		return s.debit(ctx, tx, owner, cost, "AI chat", &id)
+	})
 }
 
 // GetCampaign loads a campaign.
@@ -246,9 +262,28 @@ func (s *Store) UpdateAsset(ctx context.Context, a Asset) error {
 	if a.Error != "" {
 		e = a.Error
 	}
-	_, err := s.Pool.Exec(ctx, `UPDATE assets SET status=$2, mime=$3, file_path=$4, size_bytes=$5, duration_s=$6, width=$7, height=$8, cost_usd=$9, meta=$10, error=$11, name=$12, updated_at=now() WHERE id=$1`,
-		a.ID, a.Status, a.Mime, a.FilePath, a.SizeBytes, a.DurationS, a.Width, a.Height, a.CostUSD, []byte(a.Meta), e, a.Name)
-	return err
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		var owner, campaignID *uuid.UUID
+		var old float64
+		var kind string
+		err := tx.QueryRow(ctx, `SELECT c.user_id, a.campaign_id, a.cost_usd, a.kind FROM assets a JOIN campaigns c ON c.id=a.campaign_id WHERE a.id=$1 FOR UPDATE OF a`, a.ID).
+			Scan(&owner, &campaignID, &old, &kind)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE assets SET status=$2, mime=$3, file_path=$4, size_bytes=$5, duration_s=$6, width=$7, height=$8, cost_usd=$9, meta=$10, error=$11, name=$12, updated_at=now() WHERE id=$1`,
+			a.ID, a.Status, a.Mime, a.FilePath, a.SizeBytes, a.DurationS, a.Width, a.Height, a.CostUSD, []byte(a.Meta), e, a.Name); err != nil {
+			return err
+		}
+		desc := "Video clip"
+		if kind == "poster" {
+			desc = "Poster"
+		}
+		return s.debit(ctx, tx, owner, a.CostUSD-old, desc, campaignID)
+	})
 }
 
 // GetAsset loads one asset.
@@ -347,9 +382,23 @@ func (s *Store) SaveEdit(ctx context.Context, e Edit) error {
 	if e.Error != "" {
 		errMsg = e.Error
 	}
-	_, err := s.Pool.Exec(ctx, `UPDATE edits SET status=$2, steps=$3, output_asset_id=$4, title=$5, notes=$6, cost_usd=$7, error=$8, updated_at=now() WHERE id=$1`,
-		e.ID, e.Status, steps, e.OutputAssetID, e.Title, e.Notes, e.CostUSD, errMsg)
-	return err
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		var owner, campaignID *uuid.UUID
+		var old float64
+		err := tx.QueryRow(ctx, `SELECT c.user_id, e.campaign_id, e.cost_usd FROM edits e JOIN campaigns c ON c.id=e.campaign_id WHERE e.id=$1 FOR UPDATE OF e`, e.ID).
+			Scan(&owner, &campaignID, &old)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE edits SET status=$2, steps=$3, output_asset_id=$4, title=$5, notes=$6, cost_usd=$7, error=$8, updated_at=now() WHERE id=$1`,
+			e.ID, e.Status, steps, e.OutputAssetID, e.Title, e.Notes, e.CostUSD, errMsg); err != nil {
+			return err
+		}
+		return s.debit(ctx, tx, owner, e.CostUSD-old, "Video editing", campaignID)
+	})
 }
 
 // GetEdit loads one edit session.

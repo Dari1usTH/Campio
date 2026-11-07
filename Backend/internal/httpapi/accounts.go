@@ -48,12 +48,13 @@ type user struct {
 	Method           string    `json:"-"`
 	Secret           string    `json:"-"`
 	IsTest           bool      `json:"-"`
+	CreditUSD        float64   `json:"creditUsd"`
 }
 
-const userCols = "id,email,name,business_name,language,two_factor_enabled,verified,password_hash,two_factor_method,totp_secret,is_test"
+const userCols = "id,email,name,business_name,language,two_factor_enabled,verified,password_hash,two_factor_method,totp_secret,is_test,credit_usd"
 
 func scanUser(row pgx.Row) (u user, err error) {
-	err = row.Scan(&u.ID, &u.Email, &u.Name, &u.BusinessName, &u.Language, &u.TwoFactorEnabled, &u.Verified, &u.Hash, &u.Method, &u.Secret, &u.IsTest)
+	err = row.Scan(&u.ID, &u.Email, &u.Name, &u.BusinessName, &u.Language, &u.TwoFactorEnabled, &u.Verified, &u.Hash, &u.Method, &u.Secret, &u.IsTest, &u.CreditUSD)
 	return
 }
 func (s *Server) userByEmail(ctx context.Context, email string) (user, error) {
@@ -295,10 +296,13 @@ func (s *Server) signup(c *gin.Context) {
 	}
 	email := strings.ToLower(address.Address)
 	u := user{ID: uuid.New(), Email: email, Name: strings.Split(email, "@")[0], Language: validLanguage(req.Language), TwoFactorEnabled: true, Method: "email"}
-	_, err = s.Store.Pool.Exec(c.Request.Context(), "INSERT INTO users(id,email,name,password_hash,language) VALUES($1,$2,$3,$4,$5) ON CONFLICT(email) DO NOTHING", u.ID, u.Email, u.Name, string(hash), u.Language)
+	tag, err := s.Store.Pool.Exec(c.Request.Context(), "INSERT INTO users(id,email,name,password_hash,language) VALUES($1,$2,$3,$4,$5) ON CONFLICT(email) DO NOTHING", u.ID, u.Email, u.Name, string(hash), u.Language)
 	if err != nil {
 		failErr(c, err)
 		return
+	}
+	if tag.RowsAffected() == 1 {
+		s.grantSignupCredit(c.Request.Context(), u.ID)
 	}
 	saved, err := s.userByEmail(c.Request.Context(), email)
 	if err != nil {
@@ -627,6 +631,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 			failErr(c, err)
 			return
 		}
+		s.grantSignupCredit(c.Request.Context(), u.ID)
 	}
 	id := uuid.New()
 	code := otpCode()

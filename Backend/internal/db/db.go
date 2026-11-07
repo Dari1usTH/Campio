@@ -26,6 +26,9 @@ var ErrNotFound = errors.New("not found")
 // Store is the data access layer.
 type Store struct {
 	Pool *pgxpool.Pool
+	// CreditMarkup multiplies every AI cost before it is deducted from the
+	// owner's credit balance (0 or unset means 1).
+	CreditMarkup float64
 }
 
 // Connect opens the pool, retrying while Postgres starts up.

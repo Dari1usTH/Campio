@@ -160,21 +160,38 @@ func (s *Service) GenerateVideos(ctx context.Context, campaignID uuid.UUID, req 
 		}
 	}
 
-	var assets []db.Asset
+	// Validate every clip and price the whole request before submitting any job,
+	// so a seller who cannot afford it is refused without partial spend.
+	ests := make([]float64, len(specs))
 	total := 0.0
-	for _, sp := range specs {
+	for i := range specs {
+		sp := &specs[i]
 		if catalogErr == nil {
 			sp.duration = vm.ClosestDuration(sp.duration)
 			if err := vm.Supports(sp.duration, aspect, res); err != nil {
 				return nil, 0, invalid("%v", err)
 			}
 		}
+		if est, ok := vm.EstimateUSD(sp.duration, res, sp.withImage && imageURL != ""); ok {
+			ests[i] = est
+			total += est
+		}
+	}
+	ok, err := s.Store.CanAfford(ctx, campaignID, total)
+	if err != nil {
+		return nil, 0, err
+	}
+	if !ok {
+		return nil, analysis.Round6(total), db.ErrInsufficientCredits
+	}
+
+	var assets []db.Asset
+	for i, sp := range specs {
 		withImage := sp.withImage && imageURL != ""
 		meta := VideoMeta{Model: modelID, Prompt: sp.prompt, DurationS: sp.duration, Resolution: res, AspectRatio: aspect,
 			ConceptID: req.ConceptID, ShotIndex: sp.shotIndex, Caption: sp.caption, UsedProductImage: withImage}
-		if est, ok := vm.EstimateUSD(sp.duration, res, withImage); ok {
-			meta.EstimatedCostUSD = analysis.Round6(est)
-			total += est
+		if ests[i] > 0 {
+			meta.EstimatedCostUSD = analysis.Round6(ests[i])
 		}
 		name := "custom.mp4"
 		if req.ConceptID != "" && sp.shotIndex != nil {

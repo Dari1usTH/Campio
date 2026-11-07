@@ -355,6 +355,7 @@
       "notifications": "Notificări",
       "language": "Limbă și aspect",
       "brand": "Brand kit",
+      "billing": "Facturare",
       "danger": "Ștergere cont"
     },
     "name": "Nume",
@@ -690,7 +691,9 @@
     "email_verification_required": "Verifică adresa de email înainte să folosești autentificatorul.",
     "reset_expired": "Acest link este invalid sau a expirat. Cere unul nou.",
     "already_enabled": "Verificarea în doi pași este deja activată.",
-    "unknown_error": "Ceva n-a mers. Încearcă din nou."
+    "unknown_error": "Ceva n-a mers. Încearcă din nou.",
+    "insufficient_credits": "Nu mai ai credit AI. Reîncarcă din Setări → Facturare ca să continui.",
+    "purchases_disabled": "Cumpărarea de credite nu este disponibilă încă."
   },
   "landingKit": {
     "median": "Median eMAG",
@@ -745,5 +748,27 @@
       }
     ],
     "talkHintSignedOut": "Creează-ți cont gratuit ca să discuți cu AI-ul despre campania ta."
+  },
+  "billing": {
+    "title": "Facturare și credite",
+    "sub": "Munca AI este preplătită. Fiecare analiză, răspuns în chat, afiș, clip și editare scade costul din soldul tău.",
+    "balance": "Sold credit",
+    "balanceHint": "Conturile noi primesc 3 $ credit gratuit.",
+    "unmetered": "Cont de test: utilizarea AI nu se taxează.",
+    "low": "Soldul s-a epuizat. Acțiunile AI plătite sunt oprite până reîncarci.",
+    "buyTitle": "Cumpără credite",
+    "buySub": "Alege un pachet. Creditul nu expiră.",
+    "buy": "Adaugă {amount}",
+    "testMode": "Mod de test: nu se face nicio plată încă, pachetele se adaugă imediat.",
+    "disabled": "Cumpărarea de credite nu este disponibilă încă.",
+    "bought": "Am adăugat {amount} în sold.",
+    "history": "Activitate recentă",
+    "empty": "Nicio activitate încă.",
+    "kind_signup_bonus": "Credit de bun venit",
+    "kind_purchase": "Cumpărare credit",
+    "kind_usage": "Utilizare AI",
+    "markup": "Se taxează de {markup}× costul furnizorului AI.",
+    "chip": "Credit AI: {amount}",
+    "loadError": "Nu am putut încărca soldul."
   }
 }

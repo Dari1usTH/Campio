@@ -49,6 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer store.Close()
+	store.CreditMarkup = cfg.CreditMarkup
 	if err := store.Migrate(ctx); err != nil {
 		slog.Error("migrate", "err", err)
 		os.Exit(1)

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"log/slog"
 	"math"
 	"net/http"
 	"regexp"
@@ -386,7 +387,11 @@ func (s *Server) parseProduct(c *gin.Context) {
 	var r ai.IntakeResult
 	var err error
 	if !s.Cfg.MockAI {
-		r, _, err = s.AI.Intake(c.Request.Context(), req.Text+ai.LanguageInstruction(validLanguage(req.Language)), nil, nil, nil)
+		var usage ai.Usage
+		r, usage, err = s.AI.Intake(c.Request.Context(), req.Text+ai.LanguageInstruction(validLanguage(req.Language)), nil, nil, nil)
+		if cerr := s.Store.ChargeUser(c.Request.Context(), currentUser(c).ID, usage.Cost, "Product description parsing"); cerr != nil {
+			slog.Error("charge wizard parse", "err", cerr)
+		}
 		if err != nil {
 			failErr(c, err)
 			return

@@ -39,6 +39,10 @@ type Config struct {
 	EditorModel      string
 	PosterModel      string
 	PosterAspect     string
+	// Credits: AI cost × CreditMarkup is deducted from the user's balance.
+	CreditMarkup    float64
+	SignupCreditUSD float64
+	FakePurchases   bool
 }
 
 func Load() Config {
@@ -72,6 +76,9 @@ func Load() Config {
 		EditorModel:      env("EDITOR_MODEL", env("OPENROUTER_MODEL", "google/gemini-2.5-flash")),
 		PosterModel:      env("POSTER_MODEL", "google/gemini-2.5-flash-image"),
 		PosterAspect:     env("POSTER_ASPECT_RATIO", "4:5"),
+		CreditMarkup:     envFloat("CREDIT_MARKUP", 1.0),
+		SignupCreditUSD:  envFloat("SIGNUP_CREDIT_USD", 3.0),
+		FakePurchases:    envBool("FAKE_PURCHASES", true),
 	}
 }
 
@@ -86,6 +93,15 @@ func envBool(k string, def bool) bool {
 	if v, ok := os.LookupEnv(k); ok {
 		if b, err := strconv.ParseBool(v); err == nil {
 			return b
+		}
+	}
+	return def
+}
+
+func envFloat(k string, def float64) float64 {
+	if v, ok := os.LookupEnv(k); ok {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f >= 0 {
+			return f
 		}
 	}
 	return def
