@@ -2,3 +2,17 @@
 /server
 /bin/
 /data/
+node_modules/
+.vite/
+dist/
+.output/
+.nitro/
+.tanstack/
+coverage/
+playwright-report/
+test-results/
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.local/
