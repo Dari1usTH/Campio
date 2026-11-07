@@ -97,6 +97,10 @@ func (s *Service) GenerateVideos(ctx context.Context, campaignID uuid.UUID, req 
 	if catalogErr != nil && strings.Contains(catalogErr.Error(), "not found") {
 		return nil, 0, invalid("%v", catalogErr)
 	}
+	if catalogErr == nil && req.Resolution == "" {
+		// The configured default (e.g. 480p) may not exist for this model (Veo starts at 720p).
+		res = vm.ClosestResolution(res)
+	}
 
 	var specs []clipSpec
 	switch {

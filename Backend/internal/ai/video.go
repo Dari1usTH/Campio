@@ -184,6 +184,41 @@ func (m VideoModel) ClosestDuration(d int) int {
 	return best
 }
 
+// ClosestResolution returns res when the model supports it, otherwise the lowest
+// supported resolution above res (or the highest one below it when none is above).
+func (m VideoModel) ClosestResolution(res string) string {
+	if len(m.SupportedResolutions) == 0 || containsStr(m.SupportedResolutions, res) {
+		return res
+	}
+	want := resolutionRank(res)
+	best, bestRank := "", 0
+	for _, r := range m.SupportedResolutions {
+		rk := resolutionRank(r)
+		if rk < 0 {
+			continue
+		}
+		switch {
+		case best == "",
+			bestRank < want && rk > bestRank, // still below the request: go higher
+			rk >= want && rk < bestRank:      // above the request: stay as low as possible
+			best, bestRank = r, rk
+		}
+	}
+	if best == "" {
+		return m.SupportedResolutions[0]
+	}
+	return best
+}
+
+func resolutionRank(r string) int {
+	for i, v := range resolutions {
+		if strings.EqualFold(v, r) {
+			return i
+		}
+	}
+	return -1
+}
+
 // EstimateUSD estimates the price of one clip; ok=false when the model is token-priced.
 func (m VideoModel) EstimateUSD(duration int, res string, withImage bool) (float64, bool) {
 	p, ok := m.PricePerSecondUSD[res]

@@ -27,4 +27,18 @@ func TestParseVideoPricing(t *testing.T) {
 	if m.ClosestDuration(4) != 5 || m.ClosestDuration(8) != 10 {
 		t.Fatal("closest duration")
 	}
+	veo := VideoModel{SupportedResolutions: []string{"720p", "1080p", "4K"}}
+	if r := veo.ClosestResolution("480p"); r != "720p" {
+		t.Fatalf("veo 480p -> %s", r)
+	}
+	if r := veo.ClosestResolution("1080p"); r != "1080p" {
+		t.Fatalf("veo 1080p -> %s", r)
+	}
+	low := VideoModel{SupportedResolutions: []string{"480p", "768p"}}
+	if r := low.ClosestResolution("1080p"); r != "768p" {
+		t.Fatalf("hailuo 1080p -> %s", r)
+	}
+	if r := (VideoModel{}).ClosestResolution("480p"); r != "480p" {
+		t.Fatalf("no list -> %s", r)
+	}
 }

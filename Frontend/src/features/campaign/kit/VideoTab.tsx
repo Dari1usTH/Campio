@@ -21,6 +21,7 @@ import {
   videoModelsQuery,
 } from "@/services/queries";
 import {
+  effectiveResolution,
   pricePerSecond,
   type Asset,
   type Edit,
@@ -52,8 +53,9 @@ export function VideoTab({ kit }: { kit: Kit }) {
       setModel(models.data.default_model);
   }, [models.data, model]);
   if (!content) return <Pending />;
-  const resolution = models.data?.default_resolution || "480p";
+  const defaultResolution = models.data?.default_resolution || "480p";
   const modelInfo = models.data?.items.find((m) => m.id === model);
+  const resolution = effectiveResolution(modelInfo, defaultResolution);
   const price = pricePerSecond(modelInfo, resolution);
   const list = assets.data ?? [];
   return (
@@ -72,7 +74,10 @@ export function VideoTab({ kit }: { kit: Kit }) {
               disabled={!models.data}
             >
               {models.data?.items.map((m) => {
-                const p = pricePerSecond(m, resolution);
+                const p = pricePerSecond(
+                  m,
+                  effectiveResolution(m, defaultResolution),
+                );
                 return (
                   <option key={m.id} value={m.id}>
                     {m.name || m.id}

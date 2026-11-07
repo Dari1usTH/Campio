@@ -725,6 +725,29 @@ export const demoCaseSchema = z.object({
 });
 export type DemoCase = z.infer<typeof demoCaseSchema>;
 
+const RESOLUTIONS = ["360p", "480p", "720p", "768p", "1080p", "1K", "2K", "4K"];
+const rank = (r: string) =>
+  RESOLUTIONS.findIndex((v) => v.toLowerCase() === r.toLowerCase());
+
+/**
+ * The resolution the backend will actually use for this model: the requested one
+ * when supported, else the lowest supported one above it (else the highest below).
+ * Mirrors VideoModel.ClosestResolution in the backend.
+ */
+export function effectiveResolution(
+  model: VideoModelList["items"][number] | undefined,
+  resolution: string,
+): string {
+  const supported = (model?.supported_resolutions ?? []).filter(
+    (r) => rank(r) >= 0,
+  );
+  if (!supported.length || model?.supported_resolutions?.includes(resolution))
+    return resolution;
+  const want = rank(resolution);
+  const sorted = [...supported].sort((a, b) => rank(a) - rank(b));
+  return sorted.find((r) => rank(r) >= want) ?? sorted[sorted.length - 1] ?? resolution;
+}
+
 /** Price per second for the chosen resolution (falls back to "default", then the cheapest). */
 export function pricePerSecond(
   model: VideoModelList["items"][number] | undefined,
