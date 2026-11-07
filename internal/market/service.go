@@ -137,16 +137,18 @@ func (s *Service) Trend(ctx context.Context, keyword string) model.TrendSeries {
 	}
 }
 
-// LoadSeeds upserts seed files into the database.
-func LoadSeeds(ctx context.Context, store *db.Store, dir string) (int, error) {
+// LoadSeeds upserts seed files into the database and returns their keywords.
+func LoadSeeds(ctx context.Context, store *db.Store, dir string) ([]string, error) {
 	files, err := seed.LoadDir(dir)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
+	kws := make([]string, 0, len(files))
 	for _, f := range files {
 		if err := store.ReplaceSeed(ctx, f.Market, f.Trends); err != nil {
-			return 0, fmt.Errorf("seed %q: %w", f.Keyword, err)
+			return nil, fmt.Errorf("seed %q: %w", f.Keyword, err)
 		}
+		kws = append(kws, f.Keyword)
 	}
-	return len(files), nil
+	return kws, nil
 }

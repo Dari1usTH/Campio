@@ -37,6 +37,11 @@ func (c *Client) structured(ctx context.Context, name, system, user string, sche
 			"json_schema": map[string]any{"name": name, "strict": true, "schema": schema},
 		},
 	}
+	return c.complete(ctx, name, req, out)
+}
+
+// complete runs a JSON-schema request and decodes the answer into out.
+func (c *Client) complete(ctx context.Context, name string, req Request, out any) (Usage, error) {
 	msg, usage, err := c.Complete(ctx, req)
 	if err != nil {
 		return usage, err

@@ -35,12 +35,46 @@ func New(apiKey, model, baseURL string) *Client {
 // Enabled reports whether an API key is configured.
 func (c *Client) Enabled() bool { return c.APIKey != "" }
 
-// Message is a chat message.
+// Message is a chat message. When Parts is set (e.g. text + images), it is
+// sent as the multimodal content array instead of Content.
 type Message struct {
-	Role       string     `json:"role"`
-	Content    string     `json:"content"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role       string        `json:"role"`
+	Content    string        `json:"content"`
+	Parts      []ContentPart `json:"-"`
+	ToolCalls  []ToolCall    `json:"tool_calls,omitempty"`
+	ToolCallID string        `json:"tool_call_id,omitempty"`
+}
+
+// ContentPart is one element of a multimodal message.
+type ContentPart struct {
+	Type     string    `json:"type"` // text | image_url
+	Text     string    `json:"text,omitempty"`
+	ImageURL *ImageURL `json:"image_url,omitempty"`
+}
+
+// ImageURL is an image given to a vision model (https URL or data URL).
+type ImageURL struct {
+	URL string `json:"url"`
+}
+
+// TextPart builds a text content part.
+func TextPart(s string) ContentPart { return ContentPart{Type: "text", Text: s} }
+
+// ImagePart builds an image content part.
+func ImagePart(url string) ContentPart {
+	return ContentPart{Type: "image_url", ImageURL: &ImageURL{URL: url}}
+}
+
+// MarshalJSON sends Parts as the content array when present.
+func (m Message) MarshalJSON() ([]byte, error) {
+	type plain Message
+	if len(m.Parts) == 0 {
+		return json.Marshal(plain(m))
+	}
+	return json.Marshal(struct {
+		plain
+		Content []ContentPart `json:"content"`
+	}{plain(m), m.Parts})
 }
 
 // ToolCall is a function call requested by the model.

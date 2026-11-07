@@ -39,7 +39,7 @@ type Server struct {
 func (s *Server) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
-	r.MaxMultipartMemory = 16 << 20
+	r.MaxMultipartMemory = 16 << 20 // larger parts spill to temp files
 
 	cc := cors.Config{
 		AllowMethods:  []string{"GET", "POST", "DELETE", "OPTIONS"},
@@ -68,6 +68,7 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/campaigns", s.listCampaigns)
 	api.GET("/campaigns/:id", s.getCampaign)
 	api.DELETE("/campaigns/:id", s.deleteCampaign)
+	api.POST("/campaigns/:id/answers", s.answerQuestions)
 	api.POST("/campaigns/:id/budget-simulation", s.simulateBudget)
 	api.GET("/campaigns/:id/messages", s.listMessages)
 	api.POST("/campaigns/:id/messages", s.postMessage)
@@ -100,6 +101,8 @@ func failErr(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, db.ErrNotFound):
 		fail(c, http.StatusNotFound, "not_found", "resource not found")
+	case errors.Is(err, campaign.ErrNotWaiting):
+		fail(c, http.StatusConflict, "not_waiting", strings.TrimPrefix(err.Error(), "invalid request: "))
 	case errors.Is(err, campaign.ErrNotReady):
 		fail(c, http.StatusConflict, "not_ready", strings.TrimPrefix(err.Error(), "invalid request: "))
 	case errors.Is(err, campaign.ErrInvalid):
@@ -182,6 +185,7 @@ func (s *Server) methodology(c *gin.Context) {
 			"scraper_cost_per_page_usd":  analysis.ScraperCostPerPageUSD,
 		},
 		"steps": []string{
+			"Înțelegere (AI): din mesajul liber și pozele vânzătorului se extrag produsul, cuvântul cheie eMAG, descrierea, prețul și bugetul. Ce lipsește se întreabă; prețul și bugetul nu sunt niciodată estimate de AI (opțiunile rapide vin din datele de piață, iar dacă vânzătorul sare peste se folosește prețul median eMAG și un buget implicit).",
 			"Piața: prima pagină de rezultate eMAG (~60 produse) + 8 pagini de produs (vânzător, recenzii) + Google Trends RO pe 5 ani.",
 			"Strategie (AI): nemulțumiri extrase din recenzii, 2-3 persona, poziționare (nemulțumire → mesaj).",
 			"Conținut (AI): titluri și descriere de listing, 3-5 reclame, postări social media, idei de imagini, concepte video cu shot-uri.",

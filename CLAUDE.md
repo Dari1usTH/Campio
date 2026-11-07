@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Go/Gin + PostgreSQL backend for a hackathon project. A small eMAG.ro seller enters a product, a keyword, a price and an ad budget. The backend produces a marketing kit:
+A Go/Gin + PostgreSQL backend for a hackathon project. A small eMAG.ro seller sends one free-text prompt plus optional product photos. An intake step extracts the product, keyword, price and budget, and asks the seller questions for whatever is missing. The backend then produces a marketing kit:
 - market insight (scraped eMAG data + Google Trends)
 - personas and positioning
 - copy (listing, ads, social posts)
@@ -36,18 +36,19 @@ Unit tests live only in `internal/analysis` and `internal/ai`; everything else w
   - The eMAG selectors are all in `scraper/emag/emag.go`. Search cards use `div.card-item`; product pages are parsed from their JSON-LD block.
   - Trends uses the unofficial `explore` → `widgetdata/multiline` endpoints. For low-volume keywords it retries with the first two words.
 - `internal/campaign` holds the orchestration. All long work runs in background goroutines (`Service.wg`), and clients poll:
-  - `service.go`: `Create` returns 202 immediately. `run` executes the steps market → strategy → content → plan, and saves the partial `Kit` JSON to `campaigns.kit` after each step so the frontend renders progressively. Live fields (status, cost) are filled in by `Get`.
+  - `service.go`: `Create(prompt, images)` stores the images as `product_image` uploads and returns 202 immediately. `run` executes the steps intake → market → strategy → content → plan, and saves the partial `Kit` JSON to `campaigns.kit` after each step so the frontend renders progressively. Live fields (status, cost) are filled in by `Get`.
+  - `intake.go`: the clarification dialogue. `ai.Intake` (vision) reads the prompt, images and previous answers. `buildQuestions` decides what to ask: essential fields (product, keyword, price, budget) until known or skipped, and the AI's optional questions only in round 1. The run pauses with status `needs_input`. `Answer` (POST `/answers`) appends to `intake.answers`, claims the campaign atomically (`ResumeCampaign`) and re-runs `run`, which skips market if the keyword is unchanged. The seller's answers override the AI, and amounts are parsed by `analysis.ParseAmount`. Skipped price/budget become the eMAG median / `DefaultAdBudgetRON` and are noted in `intake.assumptions`. There are max 3 rounds. An eMAG keyword with no results triggers a keyword question instead of failing.
   - `videos.go`: one OpenRouter video job per shot. Each asset is polled until done, then downloaded into `MEDIA_DIR`. `ResumeVideoJobs` restarts polling at boot. The product photo is sent as a `first_frame` data URL.
   - `edits.go`: the editing agent loop (`ai.RunAgent` with tools `run_python` and `finish`). Inputs get predictable sandbox names (`clip_v1_shot1.mp4`, `product_image_1.png`, …). Outputs of one run are re-sent as inputs to the next. Each step is appended to `edits.steps` for the live log.
   - `chat.go`: chat with a deterministic `simulate_budget` tool.
 - `internal/ai`:
   - `openrouter.go`: chat completions, in both streaming and non-streaming form, with streamed tool-call assembly. Costs come from `usage.include`.
-  - `schema.go` / `marketing.go`: the three strict JSON-schema calls (strategy, content, plan).
+  - `schema.go` / `marketing.go` / `intake.go`: the strict JSON-schema calls (intake, strategy, content, plan). `Message.Parts` sends multimodal content (text + `image_url` data URLs).
   - `agent.go`: the generic tool loop.
   - `video.go`: the `/videos` API, plus a model catalog with per-second price parsing from `pricing_skus`.
   - `prompts.go`: all prompts. Seller-facing text is Romanian; the editor prompt and video prompts are English.
 - `internal/db`: pgx with no ORM. Migrations are embedded SQL in `internal/db/migrations`, applied in filename order and tracked in `schema_migrations`. Add a new numbered file rather than editing `001_init.sql`.
-  - Interrupted campaigns and edits are marked failed at startup (`FailInterrupted`).
+  - Interrupted campaigns and edits are marked failed at startup (`FailInterrupted`). Campaigns in `needs_input` are left alone.
 - `internal/httpapi`: Gin routes. Errors always use `{"error":{"code","message"}}`, mapped from sentinel errors in `failErr` (`campaign.ErrInvalid`, `ErrNotReady`, `db.ErrNotFound`, `market.ErrNoData`, `ai.ErrNotConfigured`).
 
 **Video worker** (`worker/`, Python stdlib server + ffmpeg + Pillow):
@@ -62,4 +63,4 @@ Unit tests live only in `internal/analysis` and `internal/ai`; everything else w
 - Asset `kind`: `generated` | `edited` | `upload`. Upload `role`: `product_image` | `logo` | `music` | `footage`.
 - Without `OPENROUTER_API_KEY`, the market endpoints still work, but campaigns, videos, edits and chat return 503 `ai_unavailable`.
 - The compose project is named `merita-lansat` on purpose, so it can't collide with another compose project in a folder called `backend`.
-- Testing without a key: point `OPENROUTER_URL` at a local mock that implements `/chat/completions` (with `response_format` json_schema names `strategy` / `content` / `campaign_plan`, plus streamed tool calls) and `/videos*`. Set `SCRAPER_ENABLED=false TRENDS_ENABLED=false` to force seed data, and `VIDEO_POLL_EVERY=1s`.
+- Testing without a key: point `OPENROUTER_URL` at a local mock that implements `/chat/completions` (with `response_format` json_schema names `intake` / `strategy` / `content` / `campaign_plan`, plus streamed tool calls) and `/videos*`. Set `SCRAPER_ENABLED=false TRENDS_ENABLED=false` to force seed data, and `VIDEO_POLL_EVERY=1s`.

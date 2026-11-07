@@ -67,6 +67,22 @@ func (s *Store) SetCampaignData(ctx context.Context, id uuid.UUID, snap model.Ma
 	return err
 }
 
+// SetCampaignProduct stores the product name understood by the intake step.
+func (s *Store) SetCampaignProduct(ctx context.Context, id uuid.UUID, productName string) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET product_name=$2, updated_at=now() WHERE id=$1`, id, productName)
+	return err
+}
+
+// ResumeCampaign atomically moves a campaign from needs_input back to running
+// with the given kit. It returns false if the campaign was not waiting.
+func (s *Store) ResumeCampaign(ctx context.Context, id uuid.UUID, kit json.RawMessage) (bool, error) {
+	tag, err := s.Pool.Exec(ctx, `UPDATE campaigns SET status='running', step='intake', error=NULL, kit=$2, updated_at=now() WHERE id=$1 AND status='needs_input'`, id, []byte(kit))
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 // AddCampaignAICost adds chat cost to the campaign.
 func (s *Store) AddCampaignAICost(ctx context.Context, id uuid.UUID, cost float64) error {
 	_, err := s.Pool.Exec(ctx, `UPDATE campaigns SET ai_cost_usd = ai_cost_usd + $2 WHERE id=$1`, id, cost)

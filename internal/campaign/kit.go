@@ -14,6 +14,7 @@ import (
 
 // Pipeline steps and statuses.
 const (
+	StepIntake   = "intake"
 	StepMarket   = "market"
 	StepStrategy = "strategy"
 	StepContent  = "content"
@@ -24,19 +25,62 @@ const (
 	StatusCompleted = "completed"
 	StatusFailed    = "failed"
 	StatusPending   = "pending"
+	// StatusNeedsInput: the AI asked questions (Kit.Intake.Questions) and waits for answers.
+	StatusNeedsInput = "needs_input"
+	// StatusWaiting is the intake step status while questions are pending.
+	StatusWaiting = "waiting"
 )
 
-var pipeline = []string{StepMarket, StepStrategy, StepContent, StepPlan}
+var pipeline = []string{StepIntake, StepMarket, StepStrategy, StepContent, StepPlan}
 
-// Input is what the seller submits.
+// Input is the product brief. The seller only sends Prompt (+ images); every
+// other field is filled by the intake step from the prompt, images and answers.
 type Input struct {
-	ProductName        string  `json:"product_name"`
-	Keyword            string  `json:"keyword"`
-	ProductDescription string  `json:"product_description,omitempty"`
-	SalePrice          float64 `json:"sale_price"`
-	AdBudgetRON        float64 `json:"ad_budget_ron"`
-	BrandName          string  `json:"brand_name,omitempty"`
-	ProductImageURL    string  `json:"product_image_url,omitempty"`
+	Prompt             string      `json:"prompt"`
+	ImageAssetIDs      []uuid.UUID `json:"image_asset_ids"`
+	ProductName        string      `json:"product_name"`
+	Keyword            string      `json:"keyword"`
+	ProductDescription string      `json:"product_description,omitempty"`
+	SalePrice          float64     `json:"sale_price"`
+	AdBudgetRON        float64     `json:"ad_budget_ron"`
+	BrandName          string      `json:"brand_name,omitempty"`
+}
+
+// QuestionOption is a quick answer the frontend can show as a button.
+type QuestionOption struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+// Question is something the AI needs to know before building the kit.
+type Question struct {
+	ID       string           `json:"id"`
+	Field    string           `json:"field"` // product_name | keyword | sale_price | ad_budget_ron | product_description | brand_name | other
+	Text     string           `json:"text"`
+	Kind     string           `json:"kind"` // number | text
+	Unit     string           `json:"unit,omitempty"`
+	Required bool             `json:"required"` // false = may be skipped
+	Hint     string           `json:"hint,omitempty"`
+	Options  []QuestionOption `json:"options"`
+}
+
+// Answer is an answered or skipped question.
+type Answer struct {
+	QuestionID string    `json:"question_id"`
+	Field      string    `json:"field"`
+	Question   string    `json:"question"`
+	Value      string    `json:"value"`
+	Skipped    bool      `json:"skipped"`
+	Round      int       `json:"round"`
+	At         time.Time `json:"at"`
+}
+
+// IntakeBlock is the clarification dialogue between the AI and the seller.
+type IntakeBlock struct {
+	Round       int        `json:"round"`       // question rounds asked so far
+	Questions   []Question `json:"questions"`   // pending; non-empty only while status is needs_input
+	Answers     []Answer   `json:"answers"`     // history, oldest first
+	Assumptions []string   `json:"assumptions"` // defaults applied for skipped questions (Romanian)
 }
 
 func (in Input) brief() ai.ProductBrief {
@@ -112,6 +156,7 @@ type Kit struct {
 	Error     string               `json:"error,omitempty"`
 	Steps     []StepInfo           `json:"steps"`
 	Input     Input                `json:"input"`
+	Intake    IntakeBlock          `json:"intake"`
 	Market    *MarketBlock         `json:"market"`
 	Trend     *TrendBlock          `json:"trend"`
 	Strategy  *ai.Strategy         `json:"strategy"`

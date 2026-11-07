@@ -20,6 +20,7 @@ import (
 	"github.com/tibi/hackathon/backend/internal/media"
 	"github.com/tibi/hackathon/backend/internal/model"
 	"github.com/tibi/hackathon/backend/internal/sandbox"
+	"github.com/tibi/hackathon/backend/internal/seed"
 )
 
 // Config holds video/editing settings.
@@ -39,6 +40,8 @@ type Service struct {
 	Media   *media.Store
 	Sandbox *sandbox.Client
 	Cfg     Config
+	// SeedKeywords have precollected market data; the intake prefers them.
+	SeedKeywords []string
 
 	wg sync.WaitGroup
 }
@@ -50,68 +53,65 @@ func invalid(format string, a ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, a...))
 }
 
-// Validate checks the input.
-func Validate(in Input) error {
-	var errs []string
-	if strings.TrimSpace(in.ProductName) == "" {
-		errs = append(errs, "product_name is required")
-	}
-	if strings.TrimSpace(in.Keyword) == "" {
-		errs = append(errs, "keyword is required")
-	}
-	if in.SalePrice <= 0 {
-		errs = append(errs, "sale_price must be > 0")
-	}
-	if in.AdBudgetRON < 0 {
-		errs = append(errs, "ad_budget_ron must be >= 0")
-	}
-	if in.ProductImageURL != "" && !strings.HasPrefix(in.ProductImageURL, "https://") {
-		errs = append(errs, "product_image_url must be an https URL")
-	}
-	if len(in.ProductDescription) > 4000 {
-		errs = append(errs, "product_description too long (max 4000 chars)")
-	}
-	if len(errs) > 0 {
-		return invalid("%s", strings.Join(errs, "; "))
-	}
-	return nil
-}
-
 // Wait blocks until background jobs finish (used on shutdown/tests).
 func (s *Service) Wait() { s.wg.Wait() }
 
-// Create stores a new campaign and starts the async pipeline.
-func (s *Service) Create(ctx context.Context, in Input) (Kit, error) {
-	if err := Validate(in); err != nil {
+// Create stores a new campaign from the seller's prompt and images and starts
+// the async pipeline. The intake step may pause it with questions.
+func (s *Service) Create(ctx context.Context, prompt string, images []ImageFile) (Kit, error) {
+	prompt = strings.TrimSpace(prompt)
+	if err := validatePrompt(prompt, images); err != nil {
 		return Kit{}, err
 	}
 	if !s.AI.Enabled() {
 		return Kit{}, ai.ErrNotConfigured
 	}
 	now := time.Now().UTC()
-	k := Kit{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Status: StatusRunning, Step: StepMarket, Input: in, AIModel: s.AI.Model}
+	k := Kit{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Status: StatusRunning, Step: StepIntake,
+		Input: Input{Prompt: prompt}, AIModel: s.AI.Model}
 	for _, st := range pipeline {
 		k.Steps = append(k.Steps, StepInfo{Step: st, Status: StatusPending})
 	}
-	k.setStep(StepMarket, StatusRunning, 0)
+	k.setStep(StepIntake, StatusRunning, 0)
+	k.normalize()
 	b, _ := json.Marshal(k)
-	if err := s.Store.InsertCampaign(ctx, db.CampaignRow{ID: k.ID, CreatedAt: now, Status: k.Status, Step: k.Step,
-		ProductName: in.ProductName, Keyword: in.Keyword, Kit: b}); err != nil {
+	if err := s.Store.InsertCampaign(ctx, db.CampaignRow{ID: k.ID, CreatedAt: now, Status: k.Status, Step: k.Step, Kit: b}); err != nil {
 		return Kit{}, err
 	}
+	ids, err := s.saveImages(ctx, k.ID, images)
+	if err != nil {
+		_ = s.Store.DeleteCampaign(context.Background(), k.ID)
+		_ = s.Media.RemoveCampaign(k.ID.String())
+		return Kit{}, err
+	}
+	k.Input.ImageAssetIDs = ids
+	b, _ = json.Marshal(k)
+	if err := s.Store.UpdateCampaignProgress(ctx, k.ID, k.Status, k.Step, "", b, 0, 0); err != nil {
+		return Kit{}, err
+	}
+	s.start(k)
+	return k, nil
+}
+
+func (s *Service) start(k Kit) {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
 		s.run(k)
 	}()
-	return k, nil
 }
 
+// run executes intake → market → (questions?) → strategy → content → plan.
+// It is called again after the seller answers; finished steps are kept.
 func (s *Service) run(k Kit) {
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Minute)
 	defer cancel()
 	var usage ai.Usage
 	pages := 0
+	marketKeyword := ""
+	if row, err := s.Store.GetCampaign(ctx, k.ID); err == nil {
+		usage.Cost, pages, marketKeyword = row.AICostUSD, row.PagesFetched, row.Keyword
+	}
 	save := func() {
 		b, _ := json.Marshal(k)
 		if err := s.Store.UpdateCampaignProgress(ctx, k.ID, k.Status, k.Step, k.Error, b, usage.Cost, pages); err != nil {
@@ -130,46 +130,112 @@ func (s *Service) run(k Kit) {
 		save()
 		return time.Now()
 	}
+	// ask pauses the pipeline with questions; it returns false when none are needed.
+	ask := func(qs []Question) bool {
+		if len(qs) == 0 {
+			return false
+		}
+		k.Intake.Round++
+		k.Intake.Questions = qs
+		k.Status, k.Step = StatusNeedsInput, StepIntake
+		k.setStep(StepIntake, StatusWaiting, 0)
+		save()
+		return true
+	}
 
-	// 1. market data
-	t0 := time.Now()
-	var (
-		snap    model.MarketSnapshot
-		snapErr error
-		ts      model.TrendSeries
-		wg      sync.WaitGroup
-	)
-	wg.Add(2)
-	go func() { defer wg.Done(); snap, snapErr = s.Market.Snapshot(ctx, k.Input.Keyword) }()
-	go func() { defer wg.Done(); ts = s.Market.Trend(ctx, k.Input.Keyword) }()
-	wg.Wait()
-	if snapErr != nil {
-		fail(StepMarket, snapErr)
+	// 0. intake: understand the prompt, images and answers
+	t0 := begin(StepIntake)
+	res, u, err := s.AI.Intake(ctx, k.Input.Prompt, s.imageURLs(ctx, k.Input.ImageAssetIDs), intakeHistory(k.Intake.Answers), s.SeedKeywords)
+	usage.Add(u)
+	if err != nil {
+		fail(StepIntake, err)
 		return
 	}
-	pages = snap.PagesFetched
-	_ = s.Store.SetCampaignData(ctx, k.ID, snap, ts)
-	ms := analysis.ComputeMarket(snap)
-	tst := analysis.ComputeTrend(ts)
-	k.Market = &MarketBlock{
-		SourceInfo:      SourceInfo{Source: snap.Source, FetchedAt: snap.FetchedAt, FallbackNote: snap.FallbackNote},
-		Stats:           ms,
-		ReviewsAnalyzed: len(snap.Reviews),
-		Competitors:     topProducts(snap.Products, 12),
+	applyIntake(&k, res)
+	_ = s.Store.SetCampaignProduct(ctx, k.ID, k.Input.ProductName)
+	lastRound := k.Intake.Round >= maxIntakeRounds
+	if k.Input.ProductName == "" {
+		if lastRound {
+			fail(StepIntake, invalid("nu am reușit să înțeleg ce produs vrei să vinzi"))
+			return
+		}
+		if ask(buildQuestions(&k, res.Questions, nil)) {
+			return
+		}
+	}
+
+	// 1. market data (skipped when already fetched for this keyword)
+	var ms analysis.MarketStats
+	if k.Market == nil || seed.NormalizeKeyword(k.Input.Keyword) != marketKeyword {
+		t1 := begin(StepMarket)
+		var (
+			snap    model.MarketSnapshot
+			snapErr error
+			ts      model.TrendSeries
+			wg      sync.WaitGroup
+		)
+		wg.Add(2)
+		go func() { defer wg.Done(); snap, snapErr = s.Market.Snapshot(ctx, k.Input.Keyword) }()
+		go func() { defer wg.Done(); ts = s.Market.Trend(ctx, k.Input.Keyword) }()
+		wg.Wait()
+		if snapErr != nil {
+			if errors.Is(snapErr, market.ErrNoData) && !lastRound {
+				// Let the seller give a better search term instead of failing.
+				k.setStep(StepMarket, StatusPending, 0)
+				q := buildQuestions(&k, res.Questions, nil)
+				kw := Question{ID: fmt.Sprintf("q%d_kw", k.Intake.Round+1), Field: ai.FieldKeyword, Kind: "text", Required: true, Options: []QuestionOption{},
+					Text: fmt.Sprintf("Nu am găsit produse pe eMAG pentru „%s”. Ce ar scrie un client în căutare ca să găsească produsul tău?", k.Input.Keyword)}
+				k.Input.Keyword = ""
+				ask(append([]Question{kw}, q...))
+				return
+			}
+			fail(StepMarket, snapErr)
+			return
+		}
+		pages += snap.PagesFetched
+		_ = s.Store.SetCampaignData(ctx, k.ID, snap, ts)
+		ms = analysis.ComputeMarket(snap)
+		k.Market = &MarketBlock{
+			SourceInfo:      SourceInfo{Source: snap.Source, FetchedAt: snap.FetchedAt, FallbackNote: snap.FallbackNote},
+			Stats:           ms,
+			ReviewsAnalyzed: len(snap.Reviews),
+			Competitors:     topProducts(snap.Products, 12),
+		}
+		k.Trend = &TrendBlock{
+			SourceInfo: SourceInfo{Source: ts.Source, FetchedAt: ts.FetchedAt, FallbackNote: ts.FallbackNote},
+			Stats:      analysis.ComputeTrend(ts),
+			Monthly:    monthly(ts.Points),
+		}
+		k.setStep(StepMarket, StatusCompleted, time.Since(t1))
+	} else {
+		ms = k.Market.Stats
+	}
+
+	// questions about price / budget, with market-based hints and quick answers
+	applyDefaults(&k, ms, lastRound)
+	if ask(buildQuestions(&k, res.Questions, &ms)) {
+		return
+	}
+	if k.Input.SalePrice <= 0 { // no answer and no market median
+		fail(StepIntake, invalid("lipsește prețul de vânzare"))
+		return
 	}
 	if ms.PriceMedian > 0 {
 		k.Market.PriceVsMedian = analysis.Round2((k.Input.SalePrice/ms.PriceMedian - 1) * 100)
 	}
-	k.Trend = &TrendBlock{
-		SourceInfo: SourceInfo{Source: ts.Source, FetchedAt: ts.FetchedAt, FallbackNote: ts.FallbackNote},
-		Stats:      tst,
-		Monthly:    monthly(ts.Points),
+	k.setStep(StepIntake, StatusCompleted, time.Since(t0))
+
+	// The strategy needs raw reviews; load them from the stored snapshot.
+	row, err := s.Store.GetCampaign(ctx, k.ID)
+	if err != nil || row.Market == nil {
+		fail(StepStrategy, fmt.Errorf("market data missing: %v", err))
+		return
 	}
-	k.setStep(StepMarket, StatusCompleted, time.Since(t0))
+	snap := *row.Market
 
 	// 2. strategy
 	t0 = begin(StepStrategy)
-	strat, u, err := s.AI.GenerateStrategy(ctx, k.Input.brief(), ms, tst, snap)
+	strat, u, err := s.AI.GenerateStrategy(ctx, k.Input.brief(), ms, k.Trend.Stats, snap)
 	usage.Add(u)
 	if err != nil {
 		fail(StepStrategy, err)
@@ -216,6 +282,7 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Kit, db.CampaignRow, e
 		return Kit{}, row, err
 	}
 	k.Status, k.Step, k.Error, k.UpdatedAt = row.Status, row.Step, row.Error, row.UpdatedAt
+	k.normalize()
 	video, err := s.Store.SumAssetCost(ctx, id, KindGenerated)
 	if err != nil {
 		return k, row, err

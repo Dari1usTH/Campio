@@ -46,10 +46,11 @@ func main() {
 		slog.Error("migrate", "err", err)
 		os.Exit(1)
 	}
-	if n, err := market.LoadSeeds(ctx, store, cfg.SeedDir); err != nil {
+	seedKeywords, err := market.LoadSeeds(ctx, store, cfg.SeedDir)
+	if err != nil {
 		slog.Warn("seed load failed", "err", err)
 	} else {
-		slog.Info("seed data loaded", "keywords", n)
+		slog.Info("seed data loaded", "keywords", len(seedKeywords))
 	}
 	if err := store.FailInterrupted(ctx); err != nil {
 		slog.Warn("mark interrupted jobs", "err", err)
@@ -70,7 +71,7 @@ func main() {
 	mediaStore := &media.Store{Root: cfg.MediaDir}
 	sb := sandbox.New(cfg.WorkerURL)
 	campaigns := &campaign.Service{
-		Store: store, Market: mkt, AI: aiClient, Media: mediaStore, Sandbox: sb,
+		Store: store, Market: mkt, AI: aiClient, Media: mediaStore, Sandbox: sb, SeedKeywords: seedKeywords,
 		Cfg: campaign.Config{
 			VideoModel: cfg.VideoModel, VideoResolution: cfg.VideoResolution, VideoAspectRatio: cfg.VideoAspectRatio,
 			VideoPollEvery: cfg.VideoPollEvery, EditorModel: cfg.EditorModel,

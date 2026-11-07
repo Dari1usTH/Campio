@@ -5,9 +5,14 @@ info:
   summary: "Turns a product idea into a full launch marketing kit: market insight, personas, positioning, copy, campaign plan, A/B tests and AI-generated + AI-edited short videos."
   description: |
     ## What the product does
-    A small eMAG.ro seller enters a product, an eMAG search keyword, a price and an ad budget. The backend:
+    A small eMAG.ro seller writes **one free-text prompt** (Romanian) and can attach **product photos**. There is no form.
+    The backend:
 
-    1. **Understands the product and the market**: scrapes the first eMAG search page (~60 competitors: price, rating,
+    0. **Understands the request**: a vision model reads the prompt and photos and extracts the product name, eMAG search
+       keyword, description, brand, price and ad budget. When something is missing (typically price or budget) the campaign
+       pauses in status `needs_input` with **questions** for the seller. The AI never guesses price or budget. Quick answers
+       come from market data (eMAG price quartiles), and skipped questions fall back to the eMAG median price and a default budget.
+    1. **Understands the market**: scrapes the first eMAG search page (~60 competitors: price, rating,
        reviews) and the 8 most-reviewed product pages (seller and reviews), and reads Google Trends for Romania over 5 years.
     2. **Finds the audience**: 2–3 personas (who buys, what motivates them, where they spend time online).
     3. **Chooses the positioning**: turns competitor complaints into messages. If everyone complains about the battery,
@@ -30,17 +35,35 @@ info:
 
     ## Frontend guide
 
-    ### 1. Form
-    - Call `GET /api/demo-cases` and show buttons that prefill the form (seed data, so market data always works).
-    - Fields: `product_name`*, `keyword`* (eMAG search term, 2–3 words), `sale_price`*, `ad_budget_ron` (total for 4 weeks),
-      `product_description` (important: the AI only claims what is written here), `brand_name`, `product_image_url` (https, optional).
-    - Submit with `POST /api/campaigns`. It returns **202** immediately with a `Kit` in status `running`.
+    ### 1. Prompt
+    - One textarea plus an image picker (up to 5 images, max 8 MB each). `GET /api/demo-cases` gives example prompts
+      to prefill the textarea.
+    - Submit with `POST /api/campaigns` as `multipart/form-data` (`prompt` field, one `images` part per photo). Without
+      photos, you can also send JSON `{ "prompt": "..." }`. It returns **202** immediately with a `Kit` in status `running`.
+    - Photos are stored as `product_image` uploads (see `GET /api/campaigns/{id}/assets`). The first photo is also used as the
+      first video frame.
 
-    ### 2. Progress → kit
-    - Poll `GET /api/campaigns/{id}` every ~2 s while `status` is `running`. `steps[]` gives each stage's status
-      (`market` → `strategy` → `content` → `plan`). Sections (`market`, `trend`, `strategy`, `content`, `plan`) are `null`
+    ### 2. Questions (status `needs_input`)
+    - Poll `GET /api/campaigns/{id}` every ~2 s. When `status` is `needs_input`, render `intake.questions` as a small
+      chat/form card:
+      - `text` = the question (Romanian). `hint` = code-written context, e.g. the eMAG median price (show it under the field).
+      - `kind: number` → numeric input with `unit` (lei). `kind: text` → text input.
+      - `options` → quick-answer chips; clicking one fills `value`.
+      - `required: false` → show a "Sari peste" (skip) button.
+    - Send `POST /api/campaigns/{id}/answers` with `{ "answers": [{ "question_id", "value" } | { "question_id", "skip": true }],
+      "message": "optional extra info" }`. The response is **202** with the kit back in `running`; continue polling. There are at
+      most 3 rounds of questions, and usually one or none.
+    - Show `intake.answers` as the dialogue history, and `intake.assumptions` as a notice on the kit (defaults used for skipped
+      questions).
+    - The `market` / `trend` sections may already be filled while questions are pending, so you can render them behind the card.
+
+    ### 3. Progress → kit
+    - While `status` is `running`, `steps[]` gives each stage's status (`intake` → `market` → `strategy` → `content` → `plan`;
+      `intake` is `waiting` while questions are pending). Sections (`market`, `trend`, `strategy`, `content`, `plan`) are `null`
       until their step completes, so **render them progressively**. A full kit takes ~30–90 s with a real model.
-    - `status: failed` → show `error`. Typical cause: a keyword with no eMAG results.
+    - `input` holds what the AI understood (`product_name`, `keyword`, `sale_price`, `ad_budget_ron`, …). Show it as a
+      summary card ("Am înțeles: …").
+    - `status: failed` → show `error`.
     - Suggested tabs:
       - **Piața**: `market.stats` (price histogram, median vs `input.sale_price` via `market.price_vs_median_pct`,
         `avg_rating`, `top_sellers`), competitors table, `trend.monthly` line chart and `trend.stats.direction`. Show
@@ -56,9 +79,10 @@ info:
       - **Cost**: `cost` → "Kitul a costat {total_cost_ron} lei = {cost_pct_of_budget}% din bugetul de reclame".
     - Budget sliders: `POST /api/campaigns/{id}/budget-simulation` (instant, deterministic).
 
-    ### 3. Videos
-    1. Optional: upload the product photo with `POST /api/campaigns/{id}/uploads` (multipart: `file`, `role=product_image`).
-       It is used as the first frame of the first shot. Music (`role=music`), a logo and extra footage can also be uploaded
+    ### 4. Videos
+    1. Photos attached to the prompt are already uploads. Optionally upload another product photo with
+       `POST /api/campaigns/{id}/uploads` (multipart: `file`, `role=product_image`); the latest one becomes the first
+       frame of the first shot. Music (`role=music`), a logo and extra footage can also be uploaded
        for the editor.
     2. `GET /api/video-models` lists models with price per second. Show the estimated cost before generating.
     3. `POST /api/campaigns/{id}/videos` with `{ "concept_id": "v1" }` → **202** with one `Asset` per shot (status `pending`).
@@ -70,7 +94,7 @@ info:
        `finish` = done. When `status` is `completed`, `output_asset_id` points to the final video
        (`GET /api/assets/{id}` → `content_url`). Typical time: 30–120 s.
 
-    ### 4. Chat
+    ### 5. Chat
     `GET/POST /api/campaigns/{id}/messages` (only once the kit is `completed`). The assistant rewrites copy and answers
     questions. For budget what-ifs it runs the deterministic simulator and returns `simulations`. Streaming:
     send `Accept: text/event-stream` and read events `token` `{text}`, `simulation` (`BudgetSimulation`), `done` (`ChatReply`)
@@ -82,7 +106,7 @@ info:
 
     ## Errors
     `{"error": {"code", "message"}}`. Codes: `invalid_request` (400), `not_found` (404), `not_ready` (409: kit still generating
-    or asset not finished), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
+    or asset not finished), `not_waiting` (409: answers posted while no questions are pending), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
     `timeout` (504), `internal` (500).
 
     ## CORS
@@ -219,20 +243,22 @@ paths:
     post:
       tags: [Campaigns]
       summary: Start generating a marketing kit (async)
-      description: Returns 202 immediately; poll GET /api/campaigns/{id}. Requires the server to have an OpenRouter key.
+      description: |
+        The seller sends only a free-text prompt plus optional product images. Returns 202 immediately; poll
+        GET /api/campaigns/{id}. The kit may move to `needs_input` with questions (answer with POST /api/campaigns/{id}/answers).
+        Requires the server to have an OpenRouter key.
       operationId: createCampaign
       requestBody:
         required: true
         content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/CampaignCreateMultipart" }
+            encoding:
+              images: { contentType: "image/*" }
           application/json:
-            schema: { $ref: "#/components/schemas/CampaignInput" }
+            schema: { $ref: "#/components/schemas/CampaignCreate" }
             example:
-              product_name: Suport laptop reglabil din aluminiu
-              keyword: suport laptop
-              product_description: "Suport pliabil din aluminiu pentru laptopuri 10-17 inch, 6 trepte de înălțime, bază lată cu silicon antiderapant, 280 g."
-              sale_price: 79
-              ad_budget_ron: 2000
-              brand_name: Ergodesk
+              prompt: "Vreau să vând pe eMAG un suport de laptop pliabil din aluminiu, 6 trepte de înălțime, 280 g. Îl vând cu 79 de lei și am 2000 de lei de reclame."
       responses:
         "202":
           description: Kit created with status `running`. The `Location` header points to the kit.
@@ -286,6 +312,38 @@ paths:
       responses:
         "204": { description: Deleted. }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/campaigns/{id}/answers:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Campaigns]
+      summary: Answer the AI's questions and resume generation (async)
+      description: |
+        Only when the kit `status` is `needs_input`. Every pending question in `intake.questions` should be answered or
+        skipped. Questions left out count as skipped. Questions with `required: true` cannot be skipped. Returns 202 with the
+        kit in status `running`; keep polling GET /api/campaigns/{id} (it may ask again, max 3 rounds).
+      operationId: answerQuestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnswerRequest" }
+            example: { answers: [{ question_id: q1_1, value: "49" }, { question_id: q1_2, skip: true }], message: "Se vând mai ales cadou." }
+      responses:
+        "202":
+          description: Answers recorded; kit back to `running`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Kit" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "The kit is not waiting for answers (not_waiting)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503": { $ref: "#/components/responses/AIUnavailable" }
 
   /api/campaigns/{id}/budget-simulation:
     parameters:
@@ -369,8 +427,8 @@ paths:
       summary: Generate video clips with an OpenRouter video model (async)
       description: |
         Either `concept_id` (one clip per shot, using each shot's `video_prompt` and `duration_s`) or a free `prompt`.
-        Durations snap to the closest one the model supports. The product photo (latest `product_image` upload, else
-        `input.product_image_url`) becomes the first frame of the first shot when `use_product_image` is true (default)
+        Durations snap to the closest one the model supports. The product photo (latest `product_image` upload; prompt images are
+        such uploads) becomes the first frame of the first shot when `use_product_image` is true (default)
         and the model supports it. Max 6 clips per request.
       operationId: generateVideos
       requestBody:
@@ -619,7 +677,7 @@ components:
           type: object
           required: [code, message]
           properties:
-            code: { type: string, enum: [invalid_request, not_found, not_ready, no_market_data, ai_unavailable, ai_error, timeout, internal] }
+            code: { type: string, enum: [invalid_request, not_found, not_ready, not_waiting, no_market_data, ai_unavailable, ai_error, timeout, internal] }
             message: { type: string }
 
     Health:
@@ -660,12 +718,12 @@ components:
 
     DemoCase:
       type: object
-      required: [id, title, description, input]
+      required: [id, title, description, prompt]
       properties:
         id: { type: string }
         title: { type: string }
-        description: { type: string }
-        input: { $ref: "#/components/schemas/CampaignInput" }
+        description: { type: string, description: "What the demo shows (e.g. whether the AI will ask questions)." }
+        prompt: { type: string, description: "Example prompt to prefill the textarea." }
 
     Channel:
       type: string
@@ -682,24 +740,101 @@ components:
       enum: [live, cache, seed, none]
       description: "live = fetched now; cache = fetched live in the last 24 h; seed = precollected demo data; none = no data (trends only)."
 
-    CampaignInput:
+    CampaignCreate:
       type: object
-      required: [product_name, keyword, sale_price]
+      required: [prompt]
       properties:
-        product_name: { type: string, example: Suport laptop reglabil din aluminiu }
-        keyword: { type: string, description: "eMAG search term (2-3 words). Defaults to product_name.", example: suport laptop }
-        product_description: { type: string, maxLength: 4000, description: "Specs and benefits. The AI only claims what is written here." }
-        sale_price: { type: number, exclusiveMinimum: 0, description: "Lei incl. VAT." }
-        ad_budget_ron: { type: number, minimum: 0, default: 0, description: "Total paid ads budget for the 4-week campaign, lei." }
+        prompt: { type: string, maxLength: 4000, description: "Free text (Romanian): what the product is, and optionally price, budget, brand and what makes it special." }
+
+    CampaignCreateMultipart:
+      type: object
+      properties:
+        prompt: { type: string, maxLength: 4000, description: "Required unless at least one image is sent." }
+        images:
+          type: array
+          maxItems: 5
+          description: "Product photos (image/*, max 8 MB each). Repeat the `images` field once per file."
+          items: { type: string, format: binary }
+
+    KitInput:
+      type: object
+      description: "The product brief: `prompt` and `image_asset_ids` come from the seller; the other fields are what the AI understood (empty / 0 until known)."
+      required: [prompt, image_asset_ids, product_name, keyword, sale_price, ad_budget_ron]
+      properties:
+        prompt: { type: string }
+        image_asset_ids: { type: array, items: { type: string, format: uuid }, description: "Assets (kind upload, role product_image) created from the prompt images." }
+        product_name: { type: string }
+        keyword: { type: string, description: "eMAG search term used for market data." }
+        product_description: { type: string, description: "From the prompt, the photos and the answers. The AI only claims what is written here." }
+        sale_price: { type: number, description: "Lei incl. VAT; 0 until known." }
+        ad_budget_ron: { type: number, description: "Total paid ads budget for the 4-week campaign, lei." }
         brand_name: { type: string }
-        product_image_url: { type: string, format: uri, description: "Optional https URL of the product photo (used as first video frame). Uploading the photo is preferred." }
+
+    IntakeField:
+      type: string
+      enum: [product_name, keyword, sale_price, ad_budget_ron, product_description, brand_name, other]
+
+    QuestionOption:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string, example: "71 lei (median eMAG)" }
+        value: { type: string, example: "71", description: "Send this as the answer value." }
+
+    Question:
+      type: object
+      required: [id, field, text, kind, required, options]
+      properties:
+        id: { type: string, example: q1_1 }
+        field: { $ref: "#/components/schemas/IntakeField" }
+        text: { type: string, description: "The question, in Romanian." }
+        kind: { type: string, enum: [number, text] }
+        unit: { type: string, example: lei }
+        required: { type: boolean, description: "false = may be skipped (a default is used and noted in intake.assumptions)." }
+        hint: { type: string, description: "Code-written context, e.g. the eMAG median price and what happens if skipped." }
+        options: { type: array, items: { $ref: "#/components/schemas/QuestionOption" }, description: "Quick answers (may be empty)." }
+
+    Answer:
+      type: object
+      required: [question_id, field, question, value, skipped, round, at]
+      properties:
+        question_id: { type: string, description: "Empty for the free-text message." }
+        field: { $ref: "#/components/schemas/IntakeField" }
+        question: { type: string }
+        value: { type: string }
+        skipped: { type: boolean }
+        round: { type: integer }
+        at: { type: string, format: date-time }
+
+    IntakeBlock:
+      type: object
+      required: [round, questions, answers, assumptions]
+      properties:
+        round: { type: integer, description: "Question rounds asked so far (max 3)." }
+        questions: { type: array, items: { $ref: "#/components/schemas/Question" }, description: "Pending questions; non-empty only while status is needs_input." }
+        answers: { type: array, items: { $ref: "#/components/schemas/Answer" }, description: "Dialogue history, oldest first." }
+        assumptions: { type: array, items: { type: string }, description: "Defaults applied for skipped questions (Romanian), shown as a notice." }
+
+    AnswerRequest:
+      type: object
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required: [question_id]
+            properties:
+              question_id: { type: string }
+              value: { type: string, maxLength: 1000, description: "Free text; amounts like \"79\", \"79,90 lei\" or \"2 mii\" are parsed by the server." }
+              skip: { type: boolean, default: false }
+        message: { type: string, maxLength: 4000, description: "Optional extra information for the AI." }
 
     StepInfo:
       type: object
       required: [step, status, duration_ms]
       properties:
-        step: { type: string, enum: [market, strategy, content, plan] }
-        status: { type: string, enum: [pending, running, completed, failed] }
+        step: { type: string, enum: [intake, market, strategy, content, plan] }
+        status: { type: string, enum: [pending, running, waiting, completed, failed], description: "waiting = intake paused for questions." }
         duration_ms: { type: integer }
 
     Product:
@@ -1051,16 +1186,17 @@ components:
 
     Kit:
       type: object
-      required: [id, created_at, updated_at, status, step, steps, input, market, trend, strategy, content, plan, ai_model, cost]
+      required: [id, created_at, updated_at, status, step, steps, input, intake, market, trend, strategy, content, plan, ai_model, cost]
       properties:
         id: { type: string, format: uuid }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
-        status: { type: string, enum: [running, completed, failed] }
-        step: { type: string, enum: [market, strategy, content, plan, done] }
+        status: { type: string, enum: [running, needs_input, completed, failed], description: "needs_input = answer intake.questions." }
+        step: { type: string, enum: [intake, market, strategy, content, plan, done] }
         error: { type: string }
         steps: { type: array, items: { $ref: "#/components/schemas/StepInfo" } }
-        input: { $ref: "#/components/schemas/CampaignInput" }
+        input: { $ref: "#/components/schemas/KitInput" }
+        intake: { $ref: "#/components/schemas/IntakeBlock" }
         market: { oneOf: [{ $ref: "#/components/schemas/MarketBlock" }, { type: "null" }] }
         trend: { oneOf: [{ $ref: "#/components/schemas/TrendBlock" }, { type: "null" }] }
         strategy: { oneOf: [{ $ref: "#/components/schemas/Strategy" }, { type: "null" }] }
@@ -1075,9 +1211,9 @@ components:
       properties:
         id: { type: string, format: uuid }
         created_at: { type: string, format: date-time }
-        status: { type: string, enum: [running, completed, failed] }
+        status: { type: string, enum: [running, needs_input, completed, failed] }
         step: { type: string }
-        product_name: { type: string }
+        product_name: { type: string, description: "Empty until the intake understood the product." }
         keyword: { type: string }
 
     CampaignList:
@@ -1284,17 +1420,27 @@ components:
         status: completed
         step: done
         steps:
+          - { step: intake, status: completed, duration_ms: 3120 }
           - { step: market, status: completed, duration_ms: 4210 }
           - { step: strategy, status: completed, duration_ms: 18250 }
           - { step: content, status: completed, duration_ms: 26400 }
           - { step: plan, status: completed, duration_ms: 12100 }
         input:
+          prompt: "Vreau să lansez pe eMAG un suport de laptop pliabil din aluminiu, marca Ergodesk, 6 trepte de înălțime, 280 g."
+          image_asset_ids: [5b0e7c1e-6a43-4c55-9a4e-1f0f7d2b9a11]
           product_name: Suport laptop reglabil din aluminiu
           keyword: suport laptop
           product_description: "Suport pliabil din aluminiu pentru laptopuri 10-17 inch, 6 trepte de înălțime, bază lată cu silicon antiderapant, 280 g."
           sale_price: 79
           ad_budget_ron: 2000
           brand_name: Ergodesk
+        intake:
+          round: 1
+          questions: []
+          answers:
+            - { question_id: q1_1, field: sale_price, question: "La ce preț vrei să vinzi suportul?", value: "79", skipped: false, round: 0, at: "2026-11-07T08:45:30Z" }
+            - { question_id: q1_2, field: ad_budget_ron, question: "Cât vrei să cheltui pe reclame în primele 4 săptămâni?", value: "2000", skipped: false, round: 0, at: "2026-11-07T08:45:30Z" }
+          assumptions: []
         market:
           source: live
           fetched_at: "2026-11-07T08:12:39Z"

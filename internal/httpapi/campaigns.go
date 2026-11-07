@@ -3,6 +3,8 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -14,24 +16,86 @@ import (
 	"github.com/tibi/hackathon/backend/internal/campaign"
 )
 
+// createCampaign accepts either multipart/form-data (prompt + images[]) or
+// JSON {"prompt": "..."}.
 func (s *Server) createCampaign(c *gin.Context) {
-	var in campaign.Input
-	if err := c.ShouldBindJSON(&in); err != nil {
-		fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
-		return
+	var prompt string
+	var images []campaign.ImageFile
+	if strings.HasPrefix(c.ContentType(), "multipart/") {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(campaign.MaxImages*campaign.MaxImageBytes+(1<<20)))
+		form, err := c.MultipartForm()
+		if err != nil {
+			fail(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("invalid multipart body (max %d images of %d MB): %v", campaign.MaxImages, campaign.MaxImageBytes>>20, err))
+			return
+		}
+		prompt = strings.Join(form.Value["prompt"], "\n")
+		files := append(form.File["images"], form.File["image"]...)
+		if len(files) > campaign.MaxImages {
+			fail(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("at most %d images", campaign.MaxImages))
+			return
+		}
+		for _, fh := range files {
+			f, err := fh.Open()
+			if err != nil {
+				failErr(c, err)
+				return
+			}
+			defer f.Close()
+			mime, err := sniffMime(fh.Header.Get("Content-Type"), f)
+			if err != nil {
+				failErr(c, err)
+				return
+			}
+			images = append(images, campaign.ImageFile{Name: fh.Filename, Mime: mime, R: f})
+		}
+	} else {
+		var req struct {
+			Prompt string `json:"prompt"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
+			return
+		}
+		prompt = req.Prompt
 	}
-	in.ProductName = strings.TrimSpace(in.ProductName)
-	in.Keyword = strings.TrimSpace(in.Keyword)
-	if in.Keyword == "" {
-		in.Keyword = in.ProductName
-	}
-	k, err := s.Campaigns.Create(c.Request.Context(), in)
+	k, err := s.Campaigns.Create(c.Request.Context(), prompt, images)
 	if err != nil {
 		failErr(c, err)
 		return
 	}
 	c.Header("Location", "/api/campaigns/"+k.ID.String())
 	c.JSON(http.StatusAccepted, k)
+}
+
+func (s *Server) answerQuestions(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req campaign.AnswerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
+		return
+	}
+	k, err := s.Campaigns.Answer(c.Request.Context(), id, req)
+	if err != nil {
+		failErr(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, k)
+}
+
+// sniffMime trusts the declared type unless it is missing or generic.
+func sniffMime(declared string, f io.ReadSeeker) (string, error) {
+	if declared != "" && declared != "application/octet-stream" {
+		return declared, nil
+	}
+	buf := make([]byte, 512)
+	n, _ := f.Read(buf)
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+	return http.DetectContentType(buf[:n]), nil
 }
 
 func (s *Server) listCampaigns(c *gin.Context) {
@@ -232,15 +296,10 @@ func (s *Server) upload(c *gin.Context) {
 		return
 	}
 	defer f.Close()
-	mime := fh.Header.Get("Content-Type")
-	if mime == "" || mime == "application/octet-stream" {
-		buf := make([]byte, 512)
-		n, _ := f.Read(buf)
-		mime = http.DetectContentType(buf[:n])
-		if _, err := f.Seek(0, 0); err != nil {
-			failErr(c, err)
-			return
-		}
+	mime, err := sniffMime(fh.Header.Get("Content-Type"), f)
+	if err != nil {
+		failErr(c, err)
+		return
 	}
 	a, err := s.Campaigns.SaveUpload(c.Request.Context(), id, c.PostForm("role"), fh.Filename, mime, f)
 	if err != nil {

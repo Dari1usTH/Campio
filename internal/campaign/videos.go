@@ -139,7 +139,7 @@ func (s *Service) GenerateVideos(ctx context.Context, campaignID uuid.UUID, req 
 	useImage := req.UseProductImage == nil || *req.UseProductImage
 	imageURL := ""
 	if useImage && (catalogErr != nil || containsStr(vm.SupportedFrameImages, "first_frame")) {
-		imageURL, err = s.productImageURL(ctx, campaignID, k.Input.ProductImageURL)
+		imageURL, err = s.productImageURL(ctx, campaignID)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -277,8 +277,8 @@ func (s *Service) pollVideo(a db.Asset) {
 }
 
 // productImageURL returns the image used as first frame: the latest uploaded
-// product image (as a data URL), else the URL given in the campaign input.
-func (s *Service) productImageURL(ctx context.Context, campaignID uuid.UUID, fallback string) (string, error) {
+// product image (as a data URL), or "" when there is none.
+func (s *Service) productImageURL(ctx context.Context, campaignID uuid.UUID) (string, error) {
 	assets, err := s.Store.ListAssets(ctx, campaignID)
 	if err != nil {
 		return "", err
@@ -296,7 +296,7 @@ func (s *Service) productImageURL(ctx context.Context, campaignID uuid.UUID, fal
 			return "data:" + a.Mime + ";base64," + base64.StdEncoding.EncodeToString(b), nil
 		}
 	}
-	return fallback, nil
+	return "", nil
 }
 
 // frameSize estimates pixel size from resolution + aspect ratio (e.g. 480p 9:16 → 480x854).
