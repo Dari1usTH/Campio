@@ -80,9 +80,10 @@ info:
       - **Poziționare**: `strategy.positioning` (statement, main message, tone, complaint → message table).
       - **Conținut**: listing (3 title options with copy buttons, description, bullets, keywords), ads grouped by channel
         and persona, social posts, image ideas.
-      - **Video**: `content.video_concepts` with shots. See section 3.
+      - **Video**: `content.video_concepts` with shots. See section 4.
+      - **Posters**: `content.poster_concepts` (scene prompt + headline, subline, CTA). See section 4b.
       - **Campanie**: `plan.channels` (donut of `share_pct` plus a table of budget, impressions, clicks, orders, ROAS),
-        `plan.totals`, a 4-week calendar (`plan.calendar`, where `content_refs` link to `adN` / `vN`), `plan.ab_tests`
+        `plan.totals`, a 4-week calendar (`plan.calendar`, where `content_refs` link to `adN` / `vN` / `posterN`), `plan.ab_tests`
         with `sizing` (sample per variant, cost, days, `feasible_in_campaign`), and `plan.kpis`.
       - **Cost**: `cost` → "Kitul a costat {total_cost_ron} lei = {cost_pct_of_budget}% din bugetul de reclame".
     - Budget sliders: `POST /api/campaigns/{id}/budget-simulation` (instant, deterministic).
@@ -101,6 +102,16 @@ info:
        ~2 s and show `steps[]` as a live log: `script` = the Python code the AI wrote (render as code), `result` = run outcome,
        `finish` = done. When `status` is `completed`, `output_asset_id` points to the final video
        (`GET /api/assets/{id}` → `content_url`). Typical time: 30–120 s.
+
+    ### 4b. Posters
+    1. Same uploads as videos: the latest `product_image` upload is sent to the image model as a reference, so the poster
+       shows the real product (when the model accepts image input).
+    2. `GET /api/image-models` lists OpenRouter models that output images, plus `aspect_ratios` and the defaults.
+       Image models are token-priced, so there is no reliable estimate up front; the real cost is in `cost_usd` on each asset.
+    3. `POST /api/campaigns/{id}/posters` with `{ "concept_ids": ["poster1"] }` → **202** with one `Asset` (`kind: poster`)
+       per poster, status `pending`. Poll `GET /api/campaigns/{id}/assets` every ~5 s; it usually takes 10–40 s. When
+       `completed`, show `content_url` in an `<img>` (size from `width`/`height`). The price line is added by code from
+       `input.sale_price` (`show_price: false` to omit it). Older kits have an empty `poster_concepts`: use a free `prompt`.
 
     ### 5. Chat
     `GET/POST /api/campaigns/{id}/messages` (only once the kit is `completed`). The assistant rewrites copy and answers
@@ -125,13 +136,13 @@ servers:
 security: []  # hackathon demo: no authentication
 tags:
   - name: Meta
-    description: Health, docs, methodology, demo presets, video model catalog.
+    description: Health, docs, methodology, demo presets, video and image model catalogs.
   - name: Market
     description: Raw eMAG and Google Trends data for a keyword.
   - name: Campaigns
     description: Create and read marketing kits; budget simulation.
   - name: Media
-    description: Uploads, AI-generated video clips, AI video editing, file streaming.
+    description: Uploads, AI-generated video clips and posters, AI video editing, file streaming.
   - name: Chat
     description: AI chat about a kit, with deterministic budget simulations.
 
@@ -207,6 +218,20 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/VideoModelList" }
+        "502": { $ref: "#/components/responses/AIError" }
+
+  /api/image-models:
+    get:
+      tags: [Meta]
+      summary: OpenRouter models that output images, cheapest completion price first
+      description: Live catalog from OpenRouter (cached 1 h). Prices are per token / per image as published by OpenRouter.
+      operationId: listImageModels
+      responses:
+        "200":
+          description: Catalog.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImageModelList" }
         "502": { $ref: "#/components/responses/AIError" }
 
   /api/market:
@@ -408,8 +433,8 @@ paths:
       - $ref: "#/components/parameters/Id"
     get:
       tags: [Media]
-      summary: All media of a kit (uploads, generated clips, edited videos), oldest first
-      description: Poll every ~5 s while any generated clip is `pending` / `in_progress`.
+      summary: All media of a kit (uploads, generated clips, edited videos, posters), oldest first
+      description: Poll every ~5 s while any generated clip or poster is `pending` / `in_progress`.
       operationId: listAssets
       responses:
         "200":
@@ -487,6 +512,43 @@ paths:
                     type: array
                     items: { $ref: "#/components/schemas/Asset" }
                   estimated_cost_usd: { type: number, description: "Estimate from the model's price list (0 for token-priced models). Real cost appears on each asset when done." }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503": { $ref: "#/components/responses/AIUnavailable" }
+
+  /api/campaigns/{id}/posters:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Media]
+      summary: Generate posters with an OpenRouter image model (async)
+      description: |
+        Either `concept_ids` (one poster per concept, using its `image_prompt`, `headline`, `subline` and `cta`) or a free
+        English `prompt` describing the scene. `headline` / `subline` / `cta` override the concept's copy. The price line
+        ("89 lei") comes from the kit input, never from the AI. The latest `product_image` upload is sent as a reference
+        image when `use_product_image` is true (default) and the model accepts images. `count` makes variants (default 1).
+        Max 4 posters per request. A server restart during generation marks the poster `failed`.
+      operationId: generatePosters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PosterRequest" }
+            examples:
+              concept: { value: { concept_ids: [poster1] } }
+              custom: { value: { prompt: "aluminium laptop stand on a white desk, soft daylight, empty space on top", headline: "Spatele tău îți va mulțumi", cta: "Comandă acum", aspect_ratio: "1:1" } }
+      responses:
+        "202":
+          description: One asset per poster (status pending).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Asset" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "503": { $ref: "#/components/responses/AIUnavailable" }
@@ -725,6 +787,7 @@ components:
         ai_configured: { type: boolean, description: "False → campaigns, videos, editing and chat return 503." }
         ai_model: { type: string }
         video_model: { type: string }
+        poster_model: { type: string }
         editor_model: { type: string }
         scraper_enabled: { type: boolean }
         trends_enabled: { type: boolean }
@@ -1218,15 +1281,28 @@ components:
         end_card_lines: { type: array, items: { type: string }, description: "First line = price." }
         music_mood: { type: string }
 
+    PosterConcept:
+      type: object
+      required: [id, title, persona_id, image_prompt, headline, subline, cta]
+      properties:
+        id: { type: string, example: poster1 }
+        title: { type: string }
+        persona_id: { type: string }
+        image_prompt: { type: string, description: "English scene description for the image model (no text)." }
+        headline: { type: string, description: "On-poster text, seller's language, max ~6 words." }
+        subline: { type: string }
+        cta: { type: string }
+
     Content:
       type: object
-      required: [listing, ads, social_posts, image_ideas, video_concepts]
+      required: [listing, ads, social_posts, image_ideas, video_concepts, poster_concepts]
       properties:
         listing: { $ref: "#/components/schemas/Listing" }
         ads: { type: array, items: { $ref: "#/components/schemas/Ad" } }
         social_posts: { type: array, items: { $ref: "#/components/schemas/SocialPost" } }
         image_ideas: { type: array, items: { $ref: "#/components/schemas/ImageIdea" } }
         video_concepts: { type: array, items: { $ref: "#/components/schemas/VideoConcept" } }
+        poster_concepts: { type: array, items: { $ref: "#/components/schemas/PosterConcept" }, description: "Empty for kits created before posters existed." }
 
     ChannelEstimate:
       type: object
@@ -1324,13 +1400,14 @@ components:
 
     CostSummary:
       type: object
-      description: What producing the kit, videos and edits cost so far, vs the ad budget.
-      required: [scraper_cost_usd, pages_fetched, ai_text_cost_usd, video_cost_usd, editing_cost_usd, total_cost_usd, total_cost_ron, ad_budget_ron, cost_pct_of_budget, usd_to_ron]
+      description: What producing the kit, videos, posters and edits cost so far, vs the ad budget.
+      required: [scraper_cost_usd, pages_fetched, ai_text_cost_usd, video_cost_usd, poster_cost_usd, editing_cost_usd, total_cost_usd, total_cost_ron, ad_budget_ron, cost_pct_of_budget, usd_to_ron]
       properties:
         scraper_cost_usd: { type: number }
         pages_fetched: { type: integer }
         ai_text_cost_usd: { type: number, description: "Strategy + content + plan + chat (real OpenRouter cost)." }
         video_cost_usd: { type: number }
+        poster_cost_usd: { type: number }
         editing_cost_usd: { type: number }
         total_cost_usd: { type: number }
         total_cost_ron: { type: number }
@@ -1406,7 +1483,7 @@ components:
 
     AssetMeta:
       type: object
-      description: Details for generated clips and edited videos (empty object for uploads).
+      description: Details for generated clips, posters and edited videos (empty object for uploads).
       properties:
         model: { type: string }
         prompt: { type: string }
@@ -1422,6 +1499,11 @@ components:
         title: { type: string, description: "Edited videos: title given by the AI editor." }
         notes: { type: string, description: "Edited videos: notes for the seller (Romanian)." }
         edit_id: { type: string }
+        model_prompt: { type: string, description: "Posters: full prompt sent to the image model." }
+        headline: { type: string, description: "Posters: on-image headline." }
+        subline: { type: string }
+        cta: { type: string }
+        price: { type: string, description: "Posters: price line added by code (e.g. \"89 lei\")." }
 
     Asset:
       type: object
@@ -1431,7 +1513,7 @@ components:
         campaign_id: { type: string, format: uuid }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
-        kind: { type: string, enum: [generated, edited, upload], description: "generated = clip from the video model; edited = output of the AI editor." }
+        kind: { type: string, enum: [generated, edited, upload, poster], description: "generated = clip from the video model; edited = output of the AI editor; poster = image from the image model." }
         role: { $ref: "#/components/schemas/UploadRole" }
         status: { type: string, enum: [pending, in_progress, completed, failed] }
         name: { type: string }
@@ -1440,7 +1522,7 @@ components:
         duration_s: { type: number }
         width: { type: integer }
         height: { type: integer }
-        cost_usd: { type: number, description: "Real generation cost (generated clips)." }
+        cost_usd: { type: number, description: "Real generation cost (generated clips and posters)." }
         meta: { $ref: "#/components/schemas/AssetMeta" }
         error: { type: string }
         content_url: { type: string, description: "Relative URL of the file (only usable when completed)." }
@@ -1456,6 +1538,21 @@ components:
         aspect_ratio: { type: string, default: "9:16" }
         resolution: { type: string, default: 480p }
         model: { type: string, description: "OpenRouter video model id (see /api/video-models)." }
+        use_product_image: { type: boolean, default: true }
+
+    PosterRequest:
+      type: object
+      description: Provide concept_ids or prompt.
+      properties:
+        concept_ids: { type: array, items: { type: string }, example: [poster1] }
+        prompt: { type: string, maxLength: 2000, description: "Free English scene description (instead of concept_ids)." }
+        headline: { type: string, description: "On-poster headline; overrides the concept's." }
+        subline: { type: string }
+        cta: { type: string }
+        aspect_ratio: { type: string, default: "4:5", description: "One of ImageModelList.aspect_ratios." }
+        model: { type: string, description: "OpenRouter image model id (see /api/image-models)." }
+        count: { type: integer, minimum: 1, default: 1, description: "Variants per concept / prompt." }
+        show_price: { type: boolean, default: true }
         use_product_image: { type: boolean, default: true }
 
     EditRequest:
@@ -1516,6 +1613,28 @@ components:
         default_resolution: { type: string }
         default_aspect_ratio: { type: string }
         items: { type: array, items: { $ref: "#/components/schemas/VideoModel" } }
+
+    ImageModel:
+      type: object
+      required: [id, name, text_output, image_input, prompt_usd_per_token, completion_usd_per_token, image_usd, request_usd]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        text_output: { type: boolean }
+        image_input: { type: boolean, description: "Accepts the product photo as reference." }
+        prompt_usd_per_token: { type: number }
+        completion_usd_per_token: { type: number }
+        image_usd: { type: number, description: "Per input image, as published by OpenRouter." }
+        request_usd: { type: number }
+
+    ImageModelList:
+      type: object
+      required: [default_model, default_aspect_ratio, aspect_ratios, items]
+      properties:
+        default_model: { type: string }
+        default_aspect_ratio: { type: string }
+        aspect_ratios: { type: array, items: { type: string } }
+        items: { type: array, items: { $ref: "#/components/schemas/ImageModel" } }
 
     ChatMessage:
       type: object
@@ -1684,6 +1803,8 @@ components:
                 - { description: "Laptop pe suport", video_prompt: "close-up of a laptop on an aluminium stand, gentle push-in, soft daylight", duration_s: 4, caption: "Nu se mai clatină" }
               end_card_lines: ["79 lei", "Suport laptop Ergodesk", "Comandă pe eMAG"]
               music_mood: lo-fi
+          poster_concepts:
+            - { id: poster1, title: "Birou ordonat", persona_id: p1, image_prompt: "aluminium laptop stand on a tidy white desk, soft daylight, empty space at the top for text", headline: "Spatele tău îți va mulțumi", subline: "Ecran la nivelul ochilor, oriunde lucrezi", cta: "Comandă acum" }
         plan:
           channels:
             - { channel: meta, label: "Facebook + Instagram", share_pct: 40.91, budget_ron: 818.18, weekly_budget_ron: 204.55, est_impressions: 68182, est_clicks: 682, est_orders: 8.18, est_revenue_ron: 646.36, roas: 0.79, cpc_ron: 1.2, cpa_ron: 100, rationale: "Persona p1 e pe Instagram", formats: [reels] }
@@ -1694,4 +1815,4 @@ components:
             - { id: t1, name: "Stabil vs portabil", hypothesis: "…", channel: meta, metric: ctr, variant_a: "Nu se clatină", variant_b: "280 g", decision_rule: "câștigă CTR mai mare", sizing: { metric: ctr, sample_unit: impressions, baseline_rate_pct: 1, min_detectable_lift_pct: 30, sample_per_variant: 19827, est_cost_ron: 475.85, est_days: 16.28, feasible_in_campaign: true } }
           kpis: [CTR, ROAS]
         ai_model: google/gemini-2.5-flash
-        cost: { scraper_cost_usd: 0.0045, pages_fetched: 9, ai_text_cost_usd: 0.0148, video_cost_usd: 0.2, editing_cost_usd: 0.0042, total_cost_usd: 0.2235, total_cost_ron: 1.0281, ad_budget_ron: 2000, cost_pct_of_budget: 0.051405, usd_to_ron: 4.6 }
+        cost: { scraper_cost_usd: 0.0045, pages_fetched: 9, ai_text_cost_usd: 0.0148, video_cost_usd: 0.2, poster_cost_usd: 0, editing_cost_usd: 0.0042, total_cost_usd: 0.2235, total_cost_ron: 1.0281, ad_budget_ron: 2000, cost_pct_of_budget: 0.051405, usd_to_ron: 4.6 }

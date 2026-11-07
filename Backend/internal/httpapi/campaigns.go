@@ -361,6 +361,24 @@ func (s *Server) generateVideos(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"items": nonNil(assets), "estimated_cost_usd": est})
 }
 
+func (s *Server) generatePosters(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req campaign.PosterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
+		return
+	}
+	assets, err := s.Campaigns.GeneratePosters(c.Request.Context(), id, req)
+	if err != nil {
+		failErr(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"items": nonNil(assets)})
+}
+
 func (s *Server) getAsset(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

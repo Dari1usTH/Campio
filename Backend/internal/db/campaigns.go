@@ -168,12 +168,16 @@ func (s *Store) DeleteCampaign(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// FailInterrupted marks campaigns and edits left running by a previous process as failed.
+// FailInterrupted marks campaigns, edits and posters left running by a previous process as failed.
 func (s *Store) FailInterrupted(ctx context.Context) error {
 	if _, err := s.Pool.Exec(ctx, `UPDATE campaigns SET status='failed', error='server restarted during generation', updated_at=now() WHERE status='running'`); err != nil {
 		return err
 	}
-	_, err := s.Pool.Exec(ctx, `UPDATE edits SET status='failed', error='server restarted during editing', updated_at=now() WHERE status='running'`)
+	if _, err := s.Pool.Exec(ctx, `UPDATE edits SET status='failed', error='server restarted during editing', updated_at=now() WHERE status='running'`); err != nil {
+		return err
+	}
+	// Poster generation is one synchronous call, so it cannot be resumed like video jobs.
+	_, err := s.Pool.Exec(ctx, `UPDATE assets SET status='failed', error='server restarted during generation', updated_at=now() WHERE kind='poster' AND status IN ('pending','in_progress')`)
 	return err
 }
 
@@ -232,8 +236,8 @@ func (s *Store) UpdateAsset(ctx context.Context, a Asset) error {
 	if a.Error != "" {
 		e = a.Error
 	}
-	_, err := s.Pool.Exec(ctx, `UPDATE assets SET status=$2, mime=$3, file_path=$4, size_bytes=$5, duration_s=$6, width=$7, height=$8, cost_usd=$9, meta=$10, error=$11, updated_at=now() WHERE id=$1`,
-		a.ID, a.Status, a.Mime, a.FilePath, a.SizeBytes, a.DurationS, a.Width, a.Height, a.CostUSD, []byte(a.Meta), e)
+	_, err := s.Pool.Exec(ctx, `UPDATE assets SET status=$2, mime=$3, file_path=$4, size_bytes=$5, duration_s=$6, width=$7, height=$8, cost_usd=$9, meta=$10, error=$11, name=$12, updated_at=now() WHERE id=$1`,
+		a.ID, a.Status, a.Mime, a.FilePath, a.SizeBytes, a.DurationS, a.Width, a.Height, a.CostUSD, []byte(a.Meta), e, a.Name)
 	return err
 }
 

@@ -13,6 +13,7 @@ type CostSummary struct {
 	PagesFetched    int     `json:"pages_fetched"`
 	AITextCostUSD   float64 `json:"ai_text_cost_usd"` // strategy + content + plan + chat
 	VideoCostUSD    float64 `json:"video_cost_usd"`   // generated clips
+	PosterCostUSD   float64 `json:"poster_cost_usd"`  // generated posters
 	EditingCostUSD  float64 `json:"editing_cost_usd"` // AI editor
 	TotalCostUSD    float64 `json:"total_cost_usd"`
 	TotalCostRON    float64 `json:"total_cost_ron"`
@@ -22,17 +23,18 @@ type CostSummary struct {
 }
 
 // ComputeCost aggregates costs.
-func ComputeCost(pages int, aiText, video, editing, budgetRON float64) CostSummary {
+func ComputeCost(pages int, aiText, video, poster, editing, budgetRON float64) CostSummary {
 	c := CostSummary{
 		PagesFetched:   pages,
 		ScraperCostUSD: Round6(float64(pages) * ScraperCostPerPageUSD),
 		AITextCostUSD:  Round6(aiText),
 		VideoCostUSD:   Round6(video),
+		PosterCostUSD:  Round6(poster),
 		EditingCostUSD: Round6(editing),
 		AdBudgetRON:    budgetRON,
 		USDToRON:       USDToRON,
 	}
-	c.TotalCostUSD = Round6(c.ScraperCostUSD + c.AITextCostUSD + c.VideoCostUSD + c.EditingCostUSD)
+	c.TotalCostUSD = Round6(c.ScraperCostUSD + c.AITextCostUSD + c.VideoCostUSD + c.PosterCostUSD + c.EditingCostUSD)
 	c.TotalCostRON = Round6(c.TotalCostUSD * USDToRON)
 	if budgetRON > 0 {
 		c.CostPctOfBudget = Round6(c.TotalCostRON / budgetRON * 100)

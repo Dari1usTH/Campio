@@ -64,6 +64,13 @@ export const videoModelsQuery = () =>
     staleTime: 60 * 60 * 1000,
   });
 
+export const imageModelsQuery = () =>
+  queryOptions({
+    queryKey: ["image-models"],
+    queryFn: () => campaignsService.imageModels(),
+    staleTime: 60 * 60 * 1000,
+  });
+
 export const demoCasesQuery = () =>
   queryOptions({
     queryKey: ["demo-cases"],

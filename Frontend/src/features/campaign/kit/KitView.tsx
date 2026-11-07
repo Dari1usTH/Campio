@@ -7,6 +7,7 @@ import { WebTab } from "./WebTab";
 import { AudienceTab, ContentTab, PositioningTab } from "./StrategyTabs";
 import { PlanTab } from "./PlanTab";
 import { VideoTab } from "./VideoTab";
+import { PosterTab } from "./PosterTab";
 import { ChatTab, CostTab } from "./CostChatTabs";
 
 type TabId = keyof KitCopy["tabs"];
@@ -19,6 +20,7 @@ const ALL: TabId[] = [
   "content",
   "plan",
   "video",
+  "posters",
   "cost",
   "chat",
 ];
@@ -42,6 +44,7 @@ const filled = (kit: Kit, tab: TabId) =>
     content: !!kit.content,
     plan: !!kit.plan,
     video: !!kit.content,
+    posters: !!kit.content,
     cost: kit.status === "completed",
     chat: kit.status === "completed",
   })[tab];
@@ -116,6 +119,11 @@ export function KitView({
       {!readOnly && (
         <TabsContent value="video" className="mt-4">
           <VideoTab kit={kit} />
+        </TabsContent>
+      )}
+      {!readOnly && (
+        <TabsContent value="posters" className="mt-4">
+          <PosterTab kit={kit} />
         </TabsContent>
       )}
       <TabsContent value="cost" className="mt-4">

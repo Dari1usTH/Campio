@@ -59,7 +59,7 @@ func TestSizeABTest(t *testing.T) {
 }
 
 func TestComputeCost(t *testing.T) {
-	c := ComputeCost(10, 0.01, 0.2, 0.03, 1000)
+	c := ComputeCost(10, 0.01, 0.2, 0, 0.03, 1000)
 	if !near(c.TotalCostUSD, 0.245, 1e-9) || !near(c.TotalCostRON, 0.245*USDToRON, 1e-6) {
 		t.Fatalf("%+v", c)
 	}

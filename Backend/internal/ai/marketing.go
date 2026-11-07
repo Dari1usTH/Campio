@@ -189,13 +189,26 @@ type VideoConcept struct {
 	MusicMood    string   `json:"music_mood"`
 }
 
+// PosterConcept is a single-image ad (poster / social visual) with short on-image text.
+// The price line is not written by the AI: code adds it from the seller's price.
+type PosterConcept struct {
+	ID          string `json:"id"` // poster1..poster3
+	Title       string `json:"title"`
+	PersonaID   string `json:"persona_id"`
+	ImagePrompt string `json:"image_prompt"` // English scene description for the image model, no text
+	Headline    string `json:"headline"`     // on-image, seller's language, max 6 words
+	Subline     string `json:"subline"`      // on-image, max 10 words
+	CTA         string `json:"cta"`          // on-image, max 3 words
+}
+
 // Content is the output of step 2.
 type Content struct {
-	Listing       Listing        `json:"listing"`
-	Ads           []Ad           `json:"ads"`
-	SocialPosts   []SocialPost   `json:"social_posts"`
-	ImageIdeas    []ImageIdea    `json:"image_ideas"`
-	VideoConcepts []VideoConcept `json:"video_concepts"`
+	Listing        Listing         `json:"listing"`
+	Ads            []Ad            `json:"ads"`
+	SocialPosts    []SocialPost    `json:"social_posts"`
+	ImageIdeas     []ImageIdea     `json:"image_ideas"`
+	VideoConcepts  []VideoConcept  `json:"video_concepts"`
+	PosterConcepts []PosterConcept `json:"poster_concepts"`
 }
 
 const contentSystem = `Ești copywriter de performanță pentru e-commerce în România. Primești produsul, strategia (persona, poziționare, nemulțumirile concurenței) și date de piață.
@@ -205,6 +218,7 @@ Generează:
 - 3-6 postări social media organice;
 - 3-4 idei de imagini (generation_prompt în engleză, pentru un model text-to-image, fără text în imagine);
 - 2 concepte video scurte 9:16 (id "v1","v2"), fiecare cu 2-3 shot-uri de 3-6 secunde. "video_prompt" în ENGLEZĂ, vizual și concret (subiect, acțiune, cadru, lumină, mișcare de cameră), fără text/litere/logo-uri în imagine, fără persoane celebre și fără branduri ale altora. "caption" = textul scurt (max 8 cuvinte) pus peste clip, în română. "end_card_lines": prima linie = prețul (ex. "79 lei"), apoi numele produsului, apoi CTA.
+- 2 concepte de afiș/poster (id "poster1","poster2"), fiecare pentru o persona: "image_prompt" în ENGLEZĂ, doar scena vizuală (produsul, cadru, lumină, compoziție, stil, spațiu liber pentru text), fără text/litere/logo-uri, fără persoane celebre și fără branduri ale altora; "headline" (max 6 cuvinte), "subline" (max 10 cuvinte) și "cta" (max 3 cuvinte) sunt textele scrise pe afiș. Nu pune prețul în aceste texte: îl adaugă aplicația.
 Reguli: română naturală, fără clișee; nu inventa specificații tehnice care nu apar în descrierea produsului; folosește prețul exact primit.`
 
 func contentSchema() map[string]any {
@@ -228,6 +242,10 @@ func contentSchema() map[string]any {
 			})),
 			"end_card_lines": sArr(sStr()), "music_mood": sStr(),
 		})),
+		"poster_concepts": sArr(sObj(map[string]any{
+			"id": sStr(), "title": sStr(), "persona_id": sStr(), "image_prompt": sStr(),
+			"headline": sStr(), "subline": sStr(), "cta": sStr(),
+		})),
 	})
 }
 
@@ -238,7 +256,7 @@ func (c *Client) GenerateContent(ctx context.Context, p ProductBrief, s Strategy
 		"market": map[string]any{"price_median": m.PriceMedian, "price_p25": m.PriceP25, "price_p75": m.PriceP75, "avg_rating": m.AvgRating, "competitor_count": m.CompetitorCount},
 	}
 	var ct Content
-	u, err := c.structured(ctx, "content", contentSystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), contentSchema(), 7000, &ct)
+	u, err := c.structured(ctx, "content", contentSystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), contentSchema(), 8000, &ct)
 	if err != nil {
 		return ct, u, err
 	}
@@ -253,6 +271,9 @@ func (c *Client) GenerateContent(ctx context.Context, p ProductBrief, s Strategy
 	}
 	if ct.VideoConcepts == nil {
 		ct.VideoConcepts = []VideoConcept{}
+	}
+	if ct.PosterConcepts == nil {
+		ct.PosterConcepts = []PosterConcept{}
 	}
 	return ct, u, nil
 }
@@ -306,7 +327,7 @@ type Plan struct {
 const planSystem = `Ești media planner pentru un vânzător mic de pe eMAG.ro. Primești produsul, bugetul total de reclame pe 4 săptămâni, strategia, conținutul generat (reclame cu id, concepte video cu id) și benchmark-urile canalelor.
 Generează:
 - "channels": împărțirea bugetului pe canalele plătite (procente; codul le normalizează și calculează lei, afișări, click-uri, comenzi). Alege 2-4 canale potrivite persona-urilor. Explică pe scurt alegerea și formatele.
-- "calendar": exact 4 săptămâni (week 1..4), fiecare cu temă, obiectiv și 3-6 acțiuni concrete (zi, canal, acțiune, content_refs = id-uri de reclame "adN" sau video "vN" din conținut). Săptămâna 1 = lansare + teste, săptămâna 2 = test A/B, 3 = scalează câștigătorul, 4 = retargeting + recenzii.
+- "calendar": exact 4 săptămâni (week 1..4), fiecare cu temă, obiectiv și 3-6 acțiuni concrete (zi, canal, acțiune, content_refs = id-uri de reclame "adN", video "vN" sau afișe "posterN" din conținut). Săptămâna 1 = lansare + teste, săptămâna 2 = test A/B, 3 = scalează câștigătorul, 4 = retargeting + recenzii.
 - "ab_tests": 2-3 teste A/B de mesaj (ex.: "mesajul A (baterie) vs mesajul B (lumină caldă)"), cu ipoteză, canal, metrică ("ctr" pentru mesaje/creative, "cvr" pentru pagina produsului/preț), cele două variante și regula de decizie. NU calcula dimensiunea eșantionului — o face codul.
 - "kpis": 3-5 indicatori de urmărit.
 NU inventa cifre de performanță; scrie în română.`
@@ -340,9 +361,13 @@ func (c *Client) GeneratePlan(ctx context.Context, p ProductBrief, s Strategy, c
 	for _, v := range ct.VideoConcepts {
 		videos = append(videos, map[string]string{"id": v.ID, "title": v.Title, "persona_id": v.PersonaID, "hook": v.Hook})
 	}
+	posters := make([]map[string]string, 0, len(ct.PosterConcepts))
+	for _, pc := range ct.PosterConcepts {
+		posters = append(posters, map[string]string{"id": pc.ID, "title": pc.Title, "persona_id": pc.PersonaID, "headline": pc.Headline})
+	}
 	payload := map[string]any{
 		"product": p, "personas": s.Personas, "positioning": s.Positioning,
-		"ads": ads, "videos": videos, "channel_benchmarks": analysis.Benchmarks,
+		"ads": ads, "videos": videos, "posters": posters, "channel_benchmarks": analysis.Benchmarks,
 	}
 	var pl Plan
 	u, err := c.structured(ctx, "campaign_plan", planSystem+LanguageInstruction(p.Language), "Date (JSON):\n"+mustJSON(payload), planSchema(), 5000, &pl)

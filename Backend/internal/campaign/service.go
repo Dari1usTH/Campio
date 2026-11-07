@@ -32,6 +32,8 @@ type Config struct {
 	VideoAspectRatio string
 	VideoPollEvery   time.Duration
 	EditorModel      string
+	PosterModel      string
+	PosterAspect     string
 }
 
 // Service orchestrates campaigns.
@@ -320,12 +322,16 @@ func (s *Service) Get(ctx context.Context, id uuid.UUID) (Kit, db.CampaignRow, e
 	if err != nil {
 		return k, row, err
 	}
+	poster, err := s.Store.SumAssetCost(ctx, id, KindPoster)
+	if err != nil {
+		return k, row, err
+	}
 	editing, err := s.Store.SumEditCost(ctx, id)
 	if err != nil {
 		return k, row, err
 	}
 	k.UIData = row.UIData
-	k.Cost = analysis.ComputeCost(row.PagesFetched, row.AICostUSD, video, editing, k.Input.AdBudgetRON)
+	k.Cost = analysis.ComputeCost(row.PagesFetched, row.AICostUSD, video, poster, editing, k.Input.AdBudgetRON)
 	return k, row, nil
 }
 

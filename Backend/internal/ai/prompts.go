@@ -1,6 +1,11 @@
 package ai
 
-import "github.com/tibi/hackathon/backend/internal/analysis"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/tibi/hackathon/backend/internal/analysis"
+)
 
 // ChatSystem is the system prompt for the campaign chat; the kit JSON is appended.
 const ChatSystem = `Ești asistentul de marketing al unui vânzător mic de pe eMAG.ro. Ai generat pentru el kitul de marketing de mai jos (persona, poziționare, conținut, plan de campanie, teste A/B).
@@ -101,4 +106,43 @@ var FinishTool = Tool{
 			"additionalProperties": false,
 		},
 	},
+}
+
+// PosterText is the copy printed on a poster. Price is formatted by code, never by the AI.
+type PosterText struct {
+	Headline string
+	Subline  string
+	CTA      string
+	Price    string
+}
+
+// PosterPrompt turns a scene description plus on-image copy into one image-model prompt.
+// withProduct tells the model a reference photo of the real product is attached.
+func PosterPrompt(scene string, t PosterText, withProduct bool) string {
+	var b strings.Builder
+	b.WriteString("Design a polished advertising poster for an online shop product.\n")
+	b.WriteString("Scene: " + strings.TrimSpace(scene) + "\n")
+	if withProduct {
+		b.WriteString("The attached photo shows the real product: keep its shape, colours, materials and details exactly as they are; do not invent a different product, packaging or logo.\n")
+	}
+	var lines []string
+	for _, l := range []struct{ role, text string }{
+		{"Headline (largest, bold)", t.Headline},
+		{"Subline (smaller)", t.Subline},
+		{"Price (prominent, high contrast)", t.Price},
+		{"Call to action (button-like label)", t.CTA},
+	} {
+		if s := strings.TrimSpace(l.text); s != "" {
+			lines = append(lines, fmt.Sprintf("- %s: %q", l.role, s))
+		}
+	}
+	if len(lines) > 0 {
+		b.WriteString("Typography: render exactly these texts, spelled character for character (keep diacritics), and no other words:\n")
+		b.WriteString(strings.Join(lines, "\n") + "\n")
+		b.WriteString("Use a clean modern sans-serif, strong hierarchy, generous margins, text on calm areas with enough contrast to be readable on a phone.\n")
+	} else {
+		b.WriteString("Do not add any text, letters or numbers.\n")
+	}
+	b.WriteString("No watermarks, no third-party brands or logos, no celebrities. Professional commercial photography and layout quality.")
+	return b.String()
 }

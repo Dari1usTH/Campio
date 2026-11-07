@@ -381,6 +381,9 @@ func (k *Kit) normalize() {
 	if k.Intake.Assumptions == nil {
 		k.Intake.Assumptions = []string{}
 	}
+	if k.Content != nil && k.Content.PosterConcepts == nil {
+		k.Content.PosterConcepts = []ai.PosterConcept{} // kits made before posters existed
+	}
 }
 
 // money formats lei without useless decimals: 79, 79.9, 1000.

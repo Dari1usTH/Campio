@@ -97,6 +97,7 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/trends", s.getTrends)
 	api.GET("/web", s.getWeb)
 	api.GET("/video-models", s.videoModels)
+	api.GET("/image-models", s.imageModels)
 
 	api.Use(s.authenticate)
 	api.GET("/profile", s.profile)
@@ -126,6 +127,7 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/campaigns/:id/assets", s.ownership, s.listAssets)
 	api.POST("/campaigns/:id/uploads", s.ownership, s.upload)
 	api.POST("/campaigns/:id/videos", s.ownership, s.generateVideos)
+	api.POST("/campaigns/:id/posters", s.ownership, s.generatePosters)
 	api.GET("/campaigns/:id/edits", s.ownership, s.listEdits)
 	api.POST("/campaigns/:id/edits", s.ownership, s.startEdit)
 	api.GET("/assets/:id", s.ownership, s.getAsset)
@@ -234,6 +236,7 @@ func (s *Server) health(c *gin.Context) {
 		"ai_model":        s.AI.Model,
 		"video_model":     s.Cfg.VideoModel,
 		"editor_model":    s.Cfg.EditorModel,
+		"poster_model":    s.Cfg.PosterModel,
 		"scraper_enabled": s.Cfg.ScraperEnabled,
 		"trends_enabled":  s.Cfg.TrendsEnabled,
 	})
@@ -271,10 +274,11 @@ func (s *Server) methodology(c *gin.Context) {
 			"Piața: prima pagină de rezultate eMAG (~60 produse) + 8 pagini de produs (vânzător, recenzii) + Google Trends RO pe 5 ani.",
 			"În afara eMAG (best effort, sursele blocate sunt sărite): prima pagină de căutare Amazon.de (prețuri convertite în lei la curs fix), discuții Reddit din 2-3 subreddituri de nișă prin arhiva Arctic Shift (ultimii 3 ani) și produse noi de pe BetaList, filtrate după relevanță.",
 			"Strategie (AI): nemulțumiri extrase din recenzii eMAG și discuții Reddit, 2-3 persona, poziționare (nemulțumire → mesaj).",
-			"Conținut (AI): titluri și descriere de listing, 3-5 reclame, postări social media, idei de imagini, concepte video cu shot-uri.",
+			"Conținut (AI): titluri și descriere de listing, 3-5 reclame, postări social media, idei de imagini, concepte video cu shot-uri, concepte de afișe (titlu, subtitlu, CTA).",
 			"Plan (AI + cod): AI-ul propune canalele și procentele; codul normalizează la 100%, împarte bugetul pe 4 săptămâni și estimează afișări = buget/CPM×1000, click-uri = afișări×CTR, comenzi = click-uri×CVR, venit = comenzi×preț.",
 			"Teste A/B (AI + cod): AI-ul propune mesajele A și B; codul calculează eșantionul per variantă (test z pe două proporții, α=0.05, putere 80%, detectăm +30% relativ), costul și numărul de zile la bugetul canalului.",
 			"Video: fiecare shot = un clip generat de un model video OpenRouter (implicit cel mai ieftin potrivit pentru 9:16); editorul AI montează clipurile cu captions și end card.",
+			"Afișe: fiecare concept = o imagine generată de un model de imagine OpenRouter, cu poza produsului ca referință; textele vin din conținut, iar prețul este pus de cod din prețul vânzătorului.",
 		},
 	})
 }
@@ -341,6 +345,16 @@ func (s *Server) videoModels(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"default_model": s.Cfg.VideoModel, "default_resolution": s.Cfg.VideoResolution,
 		"default_aspect_ratio": s.Cfg.VideoAspectRatio, "items": ms})
+}
+
+func (s *Server) imageModels(c *gin.Context) {
+	ms, err := s.AI.ImageModels(c.Request.Context())
+	if err != nil {
+		failErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"default_model": s.Cfg.PosterModel, "default_aspect_ratio": s.Cfg.PosterAspect,
+		"aspect_ratios": ai.PosterAspectRatios, "items": ms})
 }
 
 func nonNil[T any](s []T) []T {

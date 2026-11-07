@@ -37,6 +37,8 @@ type Config struct {
 	VideoAspectRatio string
 	VideoPollEvery   time.Duration
 	EditorModel      string
+	PosterModel      string
+	PosterAspect     string
 }
 
 func Load() Config {
@@ -68,6 +70,8 @@ func Load() Config {
 		VideoAspectRatio: env("VIDEO_ASPECT_RATIO", "9:16"),
 		VideoPollEvery:   envDuration("VIDEO_POLL_EVERY", 10*time.Second),
 		EditorModel:      env("EDITOR_MODEL", env("OPENROUTER_MODEL", "google/gemini-2.5-flash")),
+		PosterModel:      env("POSTER_MODEL", "google/gemini-2.5-flash-image"),
+		PosterAspect:     env("POSTER_ASPECT_RATIO", "4:5"),
 	}
 }
 

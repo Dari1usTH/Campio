@@ -345,6 +345,19 @@ export const videoConceptSchema = z
   .passthrough();
 export type VideoConcept = z.infer<typeof videoConceptSchema>;
 
+export const posterConceptSchema = z
+  .object({
+    id: z.string(),
+    title: str,
+    persona_id: str,
+    image_prompt: str,
+    headline: str,
+    subline: str,
+    cta: str,
+  })
+  .passthrough();
+export type PosterConcept = z.infer<typeof posterConceptSchema>;
+
 export const contentSchema = z
   .object({
     listing: z
@@ -377,6 +390,7 @@ export const contentSchema = z
       z.object({ title: str, description: str, generation_prompt: str }),
     ),
     video_concepts: arr(videoConceptSchema),
+    poster_concepts: arr(posterConceptSchema),
   })
   .passthrough();
 export type Content = z.infer<typeof contentSchema>;
@@ -480,6 +494,7 @@ export const costSchema = z
     pages_fetched: num,
     ai_text_cost_usd: num,
     video_cost_usd: num,
+    poster_cost_usd: num,
     editing_cost_usd: num,
     total_cost_usd: num,
     total_cost_ron: num,
@@ -582,6 +597,9 @@ export const assetSchema = z
         notes: str,
         edit_id: str,
         estimated_cost_usd: num,
+        headline: str,
+        prompt: str,
+        aspect_ratio: str,
       })
       .passthrough()
       .nullish()
@@ -596,6 +614,9 @@ export const assetSchema = z
             notes: "",
             edit_id: "",
             estimated_cost_usd: 0,
+            headline: "",
+            prompt: "",
+            aspect_ratio: "",
           },
       ),
     error: str,
@@ -651,6 +672,22 @@ export const videoModelListSchema = z.object({
   ),
 });
 export type VideoModelList = z.infer<typeof videoModelListSchema>;
+
+export const imageModelListSchema = z.object({
+  default_model: str,
+  default_aspect_ratio: str,
+  aspect_ratios: strings,
+  items: arr(
+    z
+      .object({
+        id: z.string(),
+        name: str,
+        image_input: z.boolean().nullish(),
+      })
+      .passthrough(),
+  ),
+});
+export type ImageModelList = z.infer<typeof imageModelListSchema>;
 
 /* ---------- Chat ---------- */
 export const chatMessageSchema = z

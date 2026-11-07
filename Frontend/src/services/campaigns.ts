@@ -10,6 +10,7 @@ import {
   demoCaseSchema,
   editSchema,
   kitSchema,
+  imageModelListSchema,
   videoModelListSchema,
   type BudgetSimulation,
   type ChatReply,
@@ -170,6 +171,29 @@ export const campaignsService = {
           ),
         }),
       );
+  },
+  async imageModels() {
+    return imageModelListSchema.parse(await http("/image-models"));
+  },
+  async generatePosters(
+    id: string,
+    body: {
+      concept_ids?: string[];
+      prompt?: string;
+      headline?: string;
+      subline?: string;
+      cta?: string;
+      aspect_ratio?: string;
+      model?: string;
+      show_price?: boolean;
+    },
+  ) {
+    return z.object({ items: z.array(assetSchema) }).parse(
+      await http(`${idPath(id)}/posters`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    );
   },
   async edits(id: string) {
     return z

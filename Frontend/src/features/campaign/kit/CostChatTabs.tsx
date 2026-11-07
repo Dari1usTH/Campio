@@ -24,6 +24,7 @@ export function CostTab({ kit }: { kit: Kit }) {
     ],
     [c.cost.aiText, cost.ai_text_cost_usd],
     [c.cost.video, cost.video_cost_usd],
+    [c.cost.posters, cost.poster_cost_usd],
     [c.cost.editing, cost.editing_cost_usd],
   ];
   return (

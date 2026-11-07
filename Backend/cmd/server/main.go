@@ -100,6 +100,7 @@ func main() {
 		Cfg: campaign.Config{
 			MockAI: cfg.MockAI, VideoModel: cfg.VideoModel, VideoResolution: cfg.VideoResolution, VideoAspectRatio: cfg.VideoAspectRatio,
 			VideoPollEvery: cfg.VideoPollEvery, EditorModel: cfg.EditorModel,
+			PosterModel: cfg.PosterModel, PosterAspect: cfg.PosterAspect,
 		},
 	}
 	if aiClient.Enabled() {
