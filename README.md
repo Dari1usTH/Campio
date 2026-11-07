@@ -1,88 +1,77 @@
-# Merită lansat? — backend
+# Campio
 
-Go/Gin + PostgreSQL API that turns a product idea into a launch marketing kit for small eMAG.ro sellers. The kit
-includes market insight, personas, positioning, copy, a 4-week campaign plan, A/B tests, and AI-generated short videos
-that an AI editor assembles into finished reels.
+Frontend în română pentru crearea și urmărirea campaniilor de marketing. Continuă proiectul Lovable existent, cu React 19, TypeScript, TanStack Start/Router, TanStack Query, Tailwind CSS 4, React Hook Form și Zod.
 
-| Step | Who does it |
-|---|---|
-| Market: competitors, prices, reviews, sellers (eMAG scraper) + 5-year trend (Google Trends) | code |
-| Complaints from reviews, 2–3 personas, positioning (complaint → message) | LLM (OpenRouter, structured JSON) |
-| Listing titles and description, 3–5 ads, social posts, image ideas, video concepts with shots | LLM |
-| Channel choice, 4-week calendar, A/B test ideas | LLM |
-| Budget per channel, impressions, clicks, orders, ROAS, A/B sample size, cost and duration | **code** (fixed benchmarks, z-test) |
-| Video clips per shot (product photo as first frame) | OpenRouter video model, default `x-ai/grok-imagine-video-1.5-lite` ($0.02/s at 480p) |
-| Final reel: captions, transitions, end card with price | LLM writes Python, which runs in an isolated sandbox worker |
-| Chat about the kit; budget what-ifs | LLM + deterministic `simulate_budget` tool |
+## Pornire
 
-Every kit reports what it cost (scraping, text AI, videos, editing) against the ad budget.
-
-API contract and frontend guide: [openapi.yaml](openapi.yaml). The server also serves it at `GET /api/openapi.yaml`, with
-Swagger UI at `/api/docs`.
-
-## Run
-
-```bash
-cp .env.example .env            # set OPENROUTER_API_KEY
-docker compose up -d --build    # db + video-worker + api on http://localhost:8080
+```sh
+npm install
+npm run dev
 ```
 
-Local development (API with `go run`; Postgres and the worker in Docker, with the worker exposed on 127.0.0.1:8001):
+Vite afișează adresa locală în terminal. Pentru verificare:
 
-```bash
-make run
-make test
+```sh
+npm run typecheck
+npm test
+npm run build
+npm run preview
 ```
 
-If port 5432 or 8080 is taken, set `POSTGRES_PORT` / `API_PORT` in `.env`. With `make run`, also update the port in
-`DATABASE_URL`.
+## Ce este implementat
 
-## Video editing sandbox ([worker/](worker))
+- Landing, logo SVG, favicon și imagine Open Graph.
+- Înscriere, login, verificare OTP, coduri de rezervă, recuperare și resetare parolă.
+- Dashboard, notificări, onboarding și calendarul acțiunilor.
+- Creator cu 4 pași: descriere, extragere/editare produs, fotografie, canale, buget, obiectiv, ton și rezumat.
+- Generare simulată cu progres, scoruri și tranziție la campanie.
+- Raport cu 9 secțiuni, reacții simulate, avertismente, plan de buget, texte copiabile și vizual PNG 1080×1080.
+- Lansare, salvare, export prin dialogul de imprimare/PDF și link cu o copie a campaniei, doar pentru citire.
+- Rezultate reale introduse manual, comparație estimat/real și sugestii calculate din cifrele introduse.
+- Istoric cu căutare, filtre, compararea a două campanii și refolosirea setărilor.
+- Biblioteca de vizuale, profil, securitate, integrări, notificări, temă luminoasă/întunecată și brand kit.
+- Navigație adaptată la desktop, laptop, tabletă și mobil, acord cookie și mișcare redusă.
 
-The editor LLM gets two tools: `run_python(script)` and `finish(output, title, notes)`. Scripts run in the
-`video-worker` container with Python 3.13, ffmpeg, Pillow, numpy and [`vidkit`](worker/vidkit.py) (`fit`, `concat` with
-transitions, `text_overlay`, `captions`, `end_card`, `image_clip`, `add_audio`, …; text is rendered with Pillow, so
-Romanian diacritics work).
+Posterele și videourile sunt marcate „În curând”, conform specificației.
 
-Isolation:
-- **Network:** the worker is only on an `internal` Docker network shared with the API. It has no internet and no
-  route to Postgres (verified: openrouter.ai, 1.1.1.1 and `db` are all unreachable from inside).
-- **Container:** read-only root filesystem, `/tmp` tmpfs, all capabilities dropped, `no-new-privileges`, 2 GB RAM,
-  2 CPUs, 256 pids.
-- **Per run:** a fresh temp directory, minimal environment, `python -I`, CPU/file-size/file-count rlimits, a wall-clock
-  timeout that kills the whole process group, and 200 MB output cap. The worker is stateless: input files arrive with
-  the request and outputs are returned, then everything is deleted.
+## Demonstrație locală
 
-`docker-compose.dev.yml` (used by `make run`) also exposes the worker on localhost, which gives it internet access.
-Use it for development only.
+Fără `VITE_API_URL`, serviciile din `src/services/` folosesc date mock tipizate și latență simulată. Campaniile, setările și sesiunea demonstrativă se păstrează în browser. Interfața indică explicit modul demo. Nu există apeluri AI reale, trimitere de email, autentificare Google sau integrări externe active.
 
-## Demo
+Poți deschide `/app` direct pentru explorare. Pentru fluxul de autentificare:
 
-`GET /api/demo-cases` returns two presets (`suport laptop`, `husa iphone 16`). Their market data is precollected in
-`seed/`, so it works offline. Refresh it from live sources with `make seed KW="suport laptop" FILE=suport-laptop`.
+- Orice email valid și o parolă de minimum 8 caractere permit înscrierea demo.
+- OTP: orice cod cu exact 6 cifre, în afară de `000000`.
+- Login: parola `gresit` demonstrează eroarea de autentificare.
+- Emailul `taken@example.com` demonstrează eroarea de cont existent la înscriere.
+- Resetare: `/reset-password?token=demo` este valid; `expired` și `invalid` arată stările corespunzătoare.
 
-## Configuration
+Linkul de distribuire conține în fragment o copie validată a campaniei; funcționează fără datele locale ale autorului. Nu include sesiunea sau fotografia încărcată, iar modificările ulterioare nu se sincronizează. Găzduirea aplicației este necesară pentru distribuirea în afara calculatorului local.
 
-| Variable | Default | |
-|---|---|---|
-| `OPENROUTER_API_KEY` | – | Required for campaigns, videos, editing, chat |
-| `OPENROUTER_MODEL` | `google/gemini-2.5-flash` | Text model (strategy, content, plan, chat) |
-| `EDITOR_MODEL` | = `OPENROUTER_MODEL` | Video-editing agent |
-| `VIDEO_MODEL` | `x-ai/grok-imagine-video-1.5-lite` | See `GET /api/video-models` (sorted by price) |
-| `VIDEO_RESOLUTION` / `VIDEO_ASPECT_RATIO` | `480p` / `9:16` | |
-| `WORKER_URL` | `http://localhost:8001` | Compose sets `http://video-worker:8000` |
-| `MEDIA_DIR` | `data/media` | Compose uses the `media` volume |
-| `DATABASE_URL`, `PORT`, `CORS_ORIGINS`, `SCRAPER_ENABLED`, `TRENDS_ENABLED`, `CACHE_TTL`, `SEED_DIR` | | as before |
+## Conectarea backendului
 
-## Layout
+Copiază `.env.example` în `.env.local` și configurează `VITE_API_URL` cu originea API, fără slash final. Nu introduce chei secrete în variabile `VITE_*` — sunt expuse browserului.
 
-```
-cmd/server             API entrypoint          cmd/seedgen   scrape a keyword → seed JSON
-internal/analysis      deterministic math: market stats, budget/reach, A/B sizing, cost (+ tests)
-internal/ai            OpenRouter: structured outputs, streaming tool-calling agent, video API + price catalog, prompts
-internal/campaign      async kit pipeline, video jobs (poll/resume), AI editing sessions, uploads, chat
-internal/sandbox       client for the worker          internal/media   file storage
-internal/scraper/emag  eMAG search + product JSON-LD   internal/trends  Google Trends
-internal/market        cache → live → seed             internal/db      pgx, migrations, queries
-internal/httpapi       Gin routes                      worker/          Python sandbox (server.py, vidkit.py)
-```
+Toate operațiile sunt centralizate în servicii, cu tipuri și scheme Zod în `src/services/schemas.ts`. API-ul trebuie să permită originea frontendului prin CORS. Contractele principale sunt:
+
+| Serviciu          | Endpointuri                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Autentificare     | `POST /auth/signup`, `/auth/login`, `/auth/google`, `/auth/2fa/method`, `/auth/2fa/resend`, `/auth/2fa/verify`, `/auth/logout` |
+| Recuperare parolă | `POST /auth/forgot`, `GET /auth/reset/validate?token=...`, `POST /auth/reset`                                                  |
+| Produse           | `POST /wizard/parse`                                                                                                           |
+| Campanii          | `GET/POST /campaigns`, `GET/PATCH/DELETE /campaigns/:id`                                                                       |
+| Generare          | `GET /campaigns/:id/generation`                                                                                                |
+| Progres           | `POST /campaigns/:id/warnings/:warningId/toggle`, `POST /campaigns/:id/channels/:channelId/actions/:actionId/toggle`           |
+| Rezultate         | `POST /campaigns/:id/results`, `GET /campaigns/:id/results/analysis`                                                           |
+| Notificări        | `GET /notifications`, `POST /notifications/read`                                                                               |
+| Setări            | `GET/PATCH /settings`, `POST /settings/password`, `DELETE /settings/account`                                                   |
+
+Autentificarea și autorizarea reale, verificarea OAuth/OTP, stocarea fișierelor și publicarea pe platforme trebuie implementate pe server. Interfața pentru autentificator afișează intenționat un substituent QR, nu un secret TOTP real. Politicile legale demonstrative trebuie înlocuite înainte de lansarea serviciului. Costurile și estimările afișate sunt date demonstrative.
+
+Textele comune sunt în `src/i18n/ro.ts`; textele suplimentare ale modulelor sunt în fișiere `copy.ts`, pregătite pentru o traducere ulterioară. Tailwind 4 folosește tokenurile din `src/styles.css`, fără un fișier de configurare Tailwind separat.
+
+## Verificări
+
+Testele acoperă rutarea, formula scorului, extragerea produsului, monedele, bugetele, relevanța datelor mock și validarea copiilor distribuite. Interacțiunile principale sunt verificate suplimentar în Chromium la 375, 430, 768, 1024, 1280 și 1536 px. Pentru export PDF, folosește „Exportă PDF”, apoi „Salvează ca PDF” în dialogul browserului.
+
+Proiectul rămâne compatibil cu editorul [Lovable](https://lovable.dev/projects/2a62b99d-2edd-4c56-81da-41d193eed6bf). Nu sunt modificate migrații, secrete sau istoric Git publicat.
