@@ -44,7 +44,9 @@ type Config struct {
 	// Credits: AI cost × CreditMarkup is deducted from the user's balance.
 	CreditMarkup    float64
 	SignupCreditUSD float64
-	FakePurchases   bool
+	// SeedUserCreditUSD is the balance each seed account is topped up to, once.
+	SeedUserCreditUSD float64
+	FakePurchases     bool
 }
 
 func Load() Config {
@@ -55,33 +57,34 @@ func Load() Config {
 		SeedTestUser: envBool("SEED_TEST_USER", false), AllowTestOTP: envBool("ALLOW_TEST_OTP", false), TestUserEmail: env("TEST_USER_EMAIL", "test@campio.app"), TestUserPassword: env("TEST_USER_PASSWORD", ""), TestUserOTP: env("TEST_USER_OTP", "123456"),
 		SMTPHost: env("SMTP_HOST", ""), SMTPPort: env("SMTP_PORT", "587"), SMTPUser: env("SMTP_USER", ""), SMTPPassword: env("SMTP_PASSWORD", ""), SMTPFrom: env("SMTP_FROM", "Campio <noreply@campio.app>"),
 		GoogleClientID: env("GOOGLE_CLIENT_ID", ""), GoogleClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
-		SeedUsers:        seedUsers(),
-		Port:             env("PORT", "8080"),
-		DatabaseURL:      env("DATABASE_URL", "postgres://hackathon:hackathon@localhost:5432/hackathon?sslmode=disable"),
-		OpenRouterAPIKey: env("OPENROUTER_API_KEY", ""),
-		OpenRouterModel:  env("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
-		OpenRouterURL:    env("OPENROUTER_URL", "https://openrouter.ai/api/v1"),
-		CORSOrigins:      splitList(env("CORS_ORIGINS", "http://localhost:8080,http://localhost:5173")),
-		ScraperEnabled:   envBool("SCRAPER_ENABLED", true),
-		TrendsEnabled:    envBool("TRENDS_ENABLED", true),
-		AmazonEnabled:    envBool("AMAZON_ENABLED", true),
-		AmazonDomain:     env("AMAZON_DOMAIN", "www.amazon.de"),
-		RedditEnabled:    envBool("REDDIT_ENABLED", true),
-		BetaListEnabled:  envBool("BETALIST_ENABLED", true),
-		CacheTTL:         envDuration("CACHE_TTL", 24*time.Hour),
-		SeedDir:          env("SEED_DIR", "seed"),
-		MediaDir:         env("MEDIA_DIR", "data/media"),
-		WorkerURL:        env("WORKER_URL", "http://localhost:8001"),
-		VideoModel:       env("VIDEO_MODEL", "google/veo-3.1"),
-		VideoResolution:  env("VIDEO_RESOLUTION", "480p"),
-		VideoAspectRatio: env("VIDEO_ASPECT_RATIO", "9:16"),
-		VideoPollEvery:   envDuration("VIDEO_POLL_EVERY", 10*time.Second),
-		EditorModel:      env("EDITOR_MODEL", env("OPENROUTER_MODEL", "google/gemini-2.5-flash")),
-		PosterModel:      env("POSTER_MODEL", "google/gemini-2.5-flash-image"),
-		PosterAspect:     env("POSTER_ASPECT_RATIO", "4:5"),
-		CreditMarkup:     envFloat("CREDIT_MARKUP", 1.0),
-		SignupCreditUSD:  envFloat("SIGNUP_CREDIT_USD", 3.0),
-		FakePurchases:    envBool("FAKE_PURCHASES", true),
+		SeedUsers:         seedUsers(),
+		Port:              env("PORT", "8080"),
+		DatabaseURL:       env("DATABASE_URL", "postgres://hackathon:hackathon@localhost:5432/hackathon?sslmode=disable"),
+		OpenRouterAPIKey:  env("OPENROUTER_API_KEY", ""),
+		OpenRouterModel:   env("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
+		OpenRouterURL:     env("OPENROUTER_URL", "https://openrouter.ai/api/v1"),
+		CORSOrigins:       splitList(env("CORS_ORIGINS", "http://localhost:8080,http://localhost:5173")),
+		ScraperEnabled:    envBool("SCRAPER_ENABLED", true),
+		TrendsEnabled:     envBool("TRENDS_ENABLED", true),
+		AmazonEnabled:     envBool("AMAZON_ENABLED", true),
+		AmazonDomain:      env("AMAZON_DOMAIN", "www.amazon.de"),
+		RedditEnabled:     envBool("REDDIT_ENABLED", true),
+		BetaListEnabled:   envBool("BETALIST_ENABLED", true),
+		CacheTTL:          envDuration("CACHE_TTL", 24*time.Hour),
+		SeedDir:           env("SEED_DIR", "seed"),
+		MediaDir:          env("MEDIA_DIR", "data/media"),
+		WorkerURL:         env("WORKER_URL", "http://localhost:8001"),
+		VideoModel:        env("VIDEO_MODEL", "google/veo-3.1"),
+		VideoResolution:   env("VIDEO_RESOLUTION", "480p"),
+		VideoAspectRatio:  env("VIDEO_ASPECT_RATIO", "9:16"),
+		VideoPollEvery:    envDuration("VIDEO_POLL_EVERY", 10*time.Second),
+		EditorModel:       env("EDITOR_MODEL", env("OPENROUTER_MODEL", "google/gemini-2.5-flash")),
+		PosterModel:       env("POSTER_MODEL", "google/gemini-2.5-flash-image"),
+		PosterAspect:      env("POSTER_ASPECT_RATIO", "4:5"),
+		CreditMarkup:      envFloat("CREDIT_MARKUP", 1.0),
+		SignupCreditUSD:   envFloat("SIGNUP_CREDIT_USD", 3.0),
+		SeedUserCreditUSD: envFloat("SEED_USER_CREDIT_USD", 100.0),
+		FakePurchases:     envBool("FAKE_PURCHASES", true),
 	}
 }
 

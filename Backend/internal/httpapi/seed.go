@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tibi/hackathon/backend/internal/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -74,7 +75,7 @@ func (s *Server) seedTestAccount(ctx context.Context) error {
 }
 
 // seedNormalUser creates a regular, password-only account: verified, no
-// 2FA, charged for AI use, with the signup credit. On later starts only the
+// 2FA, charged for AI use, topped up once to SEED_USER_CREDIT_USD. On later starts only the
 // 2FA flag is re-applied; the password is never touched, so one changed in
 // the app survives restarts.
 func (s *Server) seedNormalUser(ctx context.Context, rawEmail, password string) error {
@@ -102,10 +103,37 @@ func (s *Server) seedNormalUser(ctx context.Context, rawEmail, password string) 
 		return err
 	}
 	if inserted {
-		s.grantSignupCredit(ctx, id)
 		slog.Info("seed user created", "email", email)
 	} else {
 		slog.Info("seed user already exists; password left unchanged", "email", email)
+	}
+	return s.seedCredit(ctx, id, email)
+}
+
+const seedCreditDesc = "Seed account credit"
+
+// seedCredit tops a seed account up to SEED_USER_CREDIT_USD once. The grant is
+// recorded in the ledger, so later starts leave the balance alone and spending
+// is not refilled on restart.
+func (s *Server) seedCredit(ctx context.Context, id uuid.UUID, email string) error {
+	var done bool
+	if err := s.Store.Pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM credit_transactions WHERE user_id=$1 AND kind=$2 AND description=$3)`,
+		id, db.CreditSignupBonus, seedCreditDesc).Scan(&done); err != nil {
+		return err
+	}
+	if done {
+		return nil
+	}
+	balance, err := s.Store.Balance(ctx, id)
+	if err != nil {
+		return err
+	}
+	if topUp := s.Cfg.SeedUserCreditUSD - balance; topUp > 0 {
+		if _, err := s.Store.GrantCredit(ctx, id, topUp, db.CreditSignupBonus, seedCreditDesc); err != nil {
+			return err
+		}
+		slog.Info("seed user credit granted", "email", email, "balance_usd", s.Cfg.SeedUserCreditUSD)
 	}
 	return nil
 }
