@@ -69,6 +69,21 @@ const en = {
       "Anyone with this link sees a snapshot of the kit (no videos, chat or account data).",
     readonly: "Read-only snapshot",
   },
+  reanalyze: {
+    button: "Re-analyze",
+    title: "Re-analyze this product",
+    body: "We'll scrape the market again and rebuild the audience, positioning, content and plan. Your earlier answers are kept.",
+    keyword: "eMAG search term",
+    keywordHint: "Change it to analyze a different market.",
+    note: "Anything to focus on? (optional)",
+    notePlaceholder: "e.g. focus on premium buyers, compare with brand X…",
+    warning:
+      "The current content and plan will be replaced. Posters and videos you already made stay, but may no longer match.",
+    submit: "Start re-analysis",
+    cancel: "Cancel",
+    started: "Re-analysis started.",
+    count: (n: number) => `Re-analyzed ${n}×`,
+  },
   questions: {
     title: "A few questions before we continue",
     sub: "Answer what you can. Skipped questions use market-based defaults, noted on the kit.",
@@ -433,6 +448,22 @@ const ro: KitCopy = {
     shareHint:
       "Oricine are linkul vede o copie a kitului (fără video, chat sau date de cont).",
     readonly: "Copie doar pentru citire",
+  },
+  reanalyze: {
+    button: "Re-analizează",
+    title: "Re-analizează produsul",
+    body: "Colectăm din nou datele de piață și refacem publicul, poziționarea, conținutul și planul. Răspunsurile tale anterioare se păstrează.",
+    keyword: "Termen de căutare eMAG",
+    keywordHint: "Schimbă-l ca să analizezi altă piață.",
+    note: "Pe ce să ne concentrăm? (opțional)",
+    notePlaceholder:
+      "ex. concentrează-te pe cumpărătorii premium, compară cu brandul X…",
+    warning:
+      "Conținutul și planul actual vor fi înlocuite. Posterele și video-urile deja create rămân, dar s-ar putea să nu se mai potrivească.",
+    submit: "Pornește re-analiza",
+    cancel: "Anulează",
+    started: "Re-analiza a pornit.",
+    count: (n: number) => `Re-analizat de ${n} ori`,
   },
   questions: {
     title: "Câteva întrebări înainte să continuăm",

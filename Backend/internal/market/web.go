@@ -69,10 +69,12 @@ func (s *Service) Web(ctx context.Context, query string, subreddits []string) mo
 	l.Lock()
 	defer l.Unlock()
 
-	if w, err := s.Store.LatestWeb(ctx, key, time.Now().Add(-s.CacheTTL)); err == nil {
-		w.Source = model.SourceCache
-		w.PagesFetched = 0
-		return w
+	if !isFresh(ctx) {
+		if w, err := s.Store.LatestWeb(ctx, key, time.Now().Add(-s.CacheTTL)); err == nil {
+			w.Source = model.SourceCache
+			w.PagesFetched = 0
+			return w
+		}
 	}
 
 	w := model.WebSnapshot{Query: q, Subreddits: subs, Source: model.SourceLive, FetchedAt: time.Now().UTC(),

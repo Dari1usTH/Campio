@@ -60,6 +60,12 @@ info:
       questions).
     - The `market` / `trend` / `web` sections may already be filled while questions are pending, so you can render them behind the card.
 
+    **Re-analysis.** Once a kit is `completed`, `failed` or `needs_input`, the seller can ask for a fresh analysis with
+    `POST /api/campaigns/{id}/reanalyze` and `{ "message"?: "extra guidance", "keyword"?: "new search term" }` (an empty body works too).
+    The market is scraped again (the cache is skipped), and strategy, content and plan are regenerated; earlier answers are kept.
+    The response is **202** with every section reset to `null`, the steps back to `pending` and `status: running`; poll as after creation.
+    Existing posters and videos are kept but may no longer match the new content. `reanalyzed` counts the requests.
+
     ### 3. Progress → kit
     - While `status` is `running`, `steps[]` gives each stage's status (`intake` → `market` → `strategy` → `content` → `plan`;
       `intake` is `waiting` while questions are pending). Sections (`market`, `trend`, `web`, `strategy`, `content`, `plan`) are `null`
@@ -125,7 +131,7 @@ info:
 
     ## Errors
     `{"error": {"code", "message"}}`. Codes: `invalid_request` (400), `not_found` (404), `not_ready` (409: kit still generating
-    or asset not finished), `not_waiting` (409: answers posted while no questions are pending), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
+    or asset not finished), `not_waiting` (409: answers posted while no questions are pending), `campaign_busy` (409: re-analysis requested while the kit is generating), `no_market_data` (422), `ai_unavailable` (503: server has no OpenRouter key), `ai_error` (502),
     `timeout` (504), `internal` (500).
 
     ## CORS
@@ -400,6 +406,38 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409":
           description: "The kit is not waiting for answers (not_waiting)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503": { $ref: "#/components/responses/AIUnavailable" }
+
+  /api/campaigns/{id}/reanalyze:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [Campaigns]
+      summary: Re-run the full analysis of the product (async)
+      description: |
+        Allowed when the kit `status` is `completed`, `failed` or `needs_input`. Scrapes the market again (skipping the cache) and
+        regenerates strategy, content and plan, keeping the seller's earlier answers. `message` and `keyword` are optional and are
+        added to `intake.answers`. Returns 202 with the reset kit in status `running`; keep polling GET /api/campaigns/{id}.
+      operationId: reanalyzeCampaign
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReanalyzeRequest" }
+            example: { message: "Concentrează-te pe cumpărătorii premium.", keyword: "suport laptop aluminiu" }
+      responses:
+        "202":
+          description: Re-analysis started; kit reset and back to `running`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Kit" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "The kit is still generating (campaign_busy)."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -929,6 +967,12 @@ components:
               skip: { type: boolean, default: false }
         message: { type: string, maxLength: 4000, description: "Optional extra information for the AI." }
 
+    ReanalyzeRequest:
+      type: object
+      properties:
+        message: { type: string, maxLength: 4000, description: "Optional guidance for the new analysis." }
+        keyword: { type: string, maxLength: 1000, description: "Optional new eMAG search term; overrides the current one." }
+
     StepInfo:
       type: object
       required: [step, status, duration_ms]
@@ -1436,6 +1480,8 @@ components:
         plan: { oneOf: [{ $ref: "#/components/schemas/Plan" }, { type: "null" }] }
         ai_model: { type: string }
         cost: { $ref: "#/components/schemas/CostSummary" }
+        reanalyzed: { type: integer, minimum: 0, description: "How many times the seller asked for a re-analysis." }
+        reanalyzed_at: { type: string, format: date-time, description: "Last re-analysis request (absent if never)." }
 
     CampaignSummary:
       type: object

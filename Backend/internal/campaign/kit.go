@@ -184,6 +184,9 @@ type Kit struct {
 	Plan      *PlanBlock           `json:"plan"`
 	AIModel   string               `json:"ai_model"`
 	Cost      analysis.CostSummary `json:"cost"`
+
+	Reanalyzed   int        `json:"reanalyzed"`              // times the seller asked for a fresh analysis
+	ReanalyzedAt *time.Time `json:"reanalyzed_at,omitempty"` // last re-analysis request
 }
 
 func (k *Kit) setStep(step, status string, d time.Duration) {

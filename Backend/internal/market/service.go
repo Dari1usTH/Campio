@@ -36,6 +36,19 @@ type Service struct {
 	locks map[string]*sync.Mutex
 }
 
+type freshKey struct{}
+
+// WithFresh marks ctx so market lookups skip the live-data cache and fetch
+// again (seed fallbacks still apply). Used when a seller asks for a re-analysis.
+func WithFresh(ctx context.Context) context.Context {
+	return context.WithValue(ctx, freshKey{}, true)
+}
+
+func isFresh(ctx context.Context) bool {
+	v, _ := ctx.Value(freshKey{}).(bool)
+	return v
+}
+
 // keyLock serialises concurrent fetches of the same keyword.
 func (s *Service) keyLock(k string) *sync.Mutex {
 	s.mu.Lock()
@@ -56,10 +69,12 @@ func (s *Service) Snapshot(ctx context.Context, keyword string) (model.MarketSna
 	l.Lock()
 	defer l.Unlock()
 
-	if snap, err := s.Store.LatestSnapshot(ctx, kw, model.SourceLive, time.Now().Add(-s.CacheTTL)); err == nil {
-		snap.Source = model.SourceCache
-		snap.PagesFetched = 0 // nothing fetched for this request
-		return snap, nil
+	if !isFresh(ctx) {
+		if snap, err := s.Store.LatestSnapshot(ctx, kw, model.SourceLive, time.Now().Add(-s.CacheTTL)); err == nil {
+			snap.Source = model.SourceCache
+			snap.PagesFetched = 0 // nothing fetched for this request
+			return snap, nil
+		}
 	}
 
 	var liveErr error
@@ -97,9 +112,11 @@ func (s *Service) Trend(ctx context.Context, keyword string) model.TrendSeries {
 	l.Lock()
 	defer l.Unlock()
 
-	if ts, err := s.Store.LatestTrend(ctx, kw, model.SourceLive, time.Now().Add(-s.CacheTTL)); err == nil {
-		ts.Source = model.SourceCache
-		return ts
+	if !isFresh(ctx) {
+		if ts, err := s.Store.LatestTrend(ctx, kw, model.SourceLive, time.Now().Add(-s.CacheTTL)); err == nil {
+			ts.Source = model.SourceCache
+			return ts
+		}
 	}
 
 	var liveErr error = errors.New("Google Trends disabled")

@@ -31,6 +31,7 @@ import { formatDate, useT } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useKitCopy } from "./kit/copy";
 import { KitView } from "./kit/KitView";
+import { ReanalyzeButton } from "./kit/ReanalyzeDialog";
 import {
   AnswersHistory,
   Assumptions,
@@ -97,9 +98,12 @@ function CampaignKit({ kit }: { kit: Kit }) {
 function FailedMessage({ kit }: { kit: Kit }) {
   const c = useKitCopy();
   return (
-    <div>
-      <p className="font-semibold">{c.header.failed}</p>
-      {kit.error && <p className="mt-1 text-muted-foreground">{kit.error}</p>}
+    <div className="flex-1 space-y-3">
+      <div>
+        <p className="font-semibold">{c.header.failed}</p>
+        {kit.error && <p className="mt-1 text-muted-foreground">{kit.error}</p>}
+      </div>
+      <ReanalyzeButton kit={kit} variant="coral" />
     </div>
   );
 }
@@ -152,6 +156,11 @@ export function KitHeader({
             <span className="text-muted-foreground">
               {formatDate(kit.created_at)}
             </span>
+            {kit.reanalyzed > 0 && (
+              <span className="text-muted-foreground">
+                · {c.reanalyze.count(kit.reanalyzed)}
+              </span>
+            )}
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {c.header.eyebrow}
@@ -276,6 +285,7 @@ function HeaderActions({ kit }: { kit: Kit }) {
             {c.header.launch}
           </Button>
         ))}
+      {kit.status !== "failed" && <ReanalyzeButton kit={kit} />}
       <Button
         variant="ghost"
         size="sm"

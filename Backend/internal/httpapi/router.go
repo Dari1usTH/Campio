@@ -120,6 +120,7 @@ func (s *Server) Router() *gin.Engine {
 	api.GET("/campaigns/:id/results/analysis", s.ownership, s.resultsAnalysis)
 	api.DELETE("/campaigns/:id", s.ownership, s.deleteCampaign)
 	api.POST("/campaigns/:id/answers", s.ownership, s.answerQuestions)
+	api.POST("/campaigns/:id/reanalyze", s.ownership, s.reanalyzeCampaign)
 	api.POST("/campaigns/:id/budget-simulation", s.ownership, s.simulateBudget)
 	api.GET("/campaigns/:id/messages", s.ownership, s.listMessages)
 	api.POST("/campaigns/:id/messages", s.ownership, s.postMessage)
@@ -182,6 +183,8 @@ func failErr(c *gin.Context, err error) {
 		fail(c, http.StatusNotFound, "not_found", "resource not found")
 	case errors.Is(err, campaign.ErrNotWaiting):
 		fail(c, http.StatusConflict, "not_waiting", strings.TrimPrefix(err.Error(), "invalid request: "))
+	case errors.Is(err, campaign.ErrBusy):
+		fail(c, http.StatusConflict, "campaign_busy", strings.TrimPrefix(err.Error(), "invalid request: "))
 	case errors.Is(err, campaign.ErrNotReady):
 		fail(c, http.StatusConflict, "not_ready", strings.TrimPrefix(err.Error(), "invalid request: "))
 	case errors.Is(err, campaign.ErrInvalid):

@@ -529,6 +529,8 @@ export const kitSchema = z
     plan: planSchema.nullish(),
     ai_model: str,
     cost: costSchema.nullish(),
+    reanalyzed: num,
+    reanalyzed_at: z.string().nullish(),
     ui_data: z
       .record(z.unknown())
       .nullish()

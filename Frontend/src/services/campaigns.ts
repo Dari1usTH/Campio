@@ -107,6 +107,20 @@ export const campaignsService = {
       }),
     );
   },
+  async reanalyze(
+    id: string,
+    opts: { message?: string | undefined; keyword?: string | undefined },
+  ) {
+    const body: { message?: string; keyword?: string } = {};
+    if (opts.message?.trim()) body.message = opts.message.trim();
+    if (opts.keyword?.trim()) body.keyword = opts.keyword.trim();
+    return kitSchema.parse(
+      await http(`${idPath(id)}/reanalyze`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    );
+  },
   async remove(id: string) {
     await http(idPath(id), { method: "DELETE" });
   },

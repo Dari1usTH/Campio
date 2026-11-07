@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -96,6 +97,26 @@ func (s *Server) answerQuestions(c *gin.Context) {
 		return
 	}
 	k, err := s.Campaigns.Answer(c.Request.Context(), id, req)
+	if err != nil {
+		failErr(c, err)
+		return
+	}
+	c.JSON(http.StatusAccepted, k)
+}
+
+func (s *Server) reanalyzeCampaign(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req campaign.ReanalyzeRequest
+	if c.Request.ContentLength != 0 {
+		if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+			fail(c, http.StatusBadRequest, "invalid_request", "invalid JSON body: "+err.Error())
+			return
+		}
+	}
+	k, err := s.Campaigns.Reanalyze(c.Request.Context(), id, req)
 	if err != nil {
 		failErr(c, err)
 		return

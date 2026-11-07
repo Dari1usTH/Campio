@@ -113,17 +113,20 @@ func (s *Service) Create(ctx context.Context, prompt string, images []ImageFile,
 	return k, nil
 }
 
-func (s *Service) start(k Kit) {
+func (s *Service) start(k Kit) { s.launch(k, false) }
+
+// launch runs the pipeline in the background. fresh skips the market cache.
+func (s *Service) launch(k Kit, fresh bool) {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		s.run(k)
+		s.run(k, fresh)
 	}()
 }
 
 // run executes intake → market → (questions?) → strategy → content → plan.
 // It is called again after the seller answers; finished steps are kept.
-func (s *Service) run(k Kit) {
+func (s *Service) run(k Kit, fresh bool) {
 	if s.Cfg.MockAI {
 		s.runMock(k)
 		return
@@ -131,6 +134,9 @@ func (s *Service) run(k Kit) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Minute)
 	defer cancel()
+	if fresh {
+		ctx = market.WithFresh(ctx)
+	}
 	var usage ai.Usage
 	pages := 0
 	marketKeyword := ""
